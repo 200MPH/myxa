@@ -1,0 +1,21 @@
+{
+  "name": "200MPH/myxa",
+  "description": "Myxa is a tiny, flexible, powerful, and quietly smart PHP Framework.",
+  "type": "project",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Wojciech Brozyna",
+      "email": "wojciech.brozyna@gmail.com"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "Myxa\\": "core/",
+      "App\\": "app/"
+    }
+  },
+  "require": {
+    "php": ">=8.4"
+  }
+}
