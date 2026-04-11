@@ -1,6 +1,6 @@
 {
-  "name": "200MPH/myxa",
-  "description": "Myxa is a tiny, flexible, powerful, and quietly smart PHP Framework.",
+  "name": "200mph/myxa",
+  "description": "Myxa, a lightweight and flexible AI-powered PHP framework.",
   "type": "project",
   "license": "MIT",
   "authors": [
@@ -17,6 +17,6 @@
   },
   "require": {
     "php": ">=8.3",
-    "200MPH/myxa-project": "1.0.*"
+    "200mph/myxa-framework": "1.0.*"
   }
 }

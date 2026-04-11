@@ -1,0 +1,28 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="myxa-gradient" x1="56" y1="48" x2="204" y2="206" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#14B8A6"/>
+      <stop offset="1" stop-color="#84CC16"/>
+    </linearGradient>
+  </defs>
+  <path
+    d="M128 42L194 80V156L128 194L62 156V80L128 42Z"
+    stroke="url(#myxa-gradient)"
+    stroke-width="12"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M128 78V166M128 104L94 124M128 104L162 124M128 138L94 158M128 138L162 158"
+    stroke="url(#myxa-gradient)"
+    stroke-width="12"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <circle cx="128" cy="78" r="10" fill="#0F172A"/>
+  <circle cx="128" cy="104" r="8" fill="#0F172A"/>
+  <circle cx="94" cy="124" r="8" fill="#0F172A"/>
+  <circle cx="162" cy="124" r="8" fill="#0F172A"/>
+  <circle cx="128" cy="138" r="8" fill="#0F172A"/>
+  <circle cx="94" cy="158" r="8" fill="#0F172A"/>
+  <circle cx="162" cy="158" r="8" fill="#0F172A"/>
+</svg>
