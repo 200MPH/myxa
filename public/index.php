@@ -101,7 +101,7 @@ function buildHttpsUrl(string $host, string $port): string
     <main>
         <img class="logo" src="/assets/images/myxa-logo.svg" alt="Myxa logo">
         <p>Docker stack ready</p>
-        <h1>Myxa app is running :)</h1>
+        <h1>Myxa app is running :-)</h1>
         <ul>
             <li>
                 <strong>Local URL</strong>
