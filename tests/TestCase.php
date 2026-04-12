@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Test;
 
 use Myxa\Database\Model\Model;
+use App\Support\Facades\Config;
 use Myxa\Support\Facades\Cache;
 use Myxa\Support\Facades\DB;
 use Myxa\Support\Facades\Redis;
@@ -49,6 +50,7 @@ abstract class TestCase extends PhpUnitTestCase
 
         DB::clearManager();
         Model::clearManager();
+        Config::clearRepository();
         Cache::clearManager();
         Redis::clearManager();
         Response::clearResponse();

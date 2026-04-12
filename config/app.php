@@ -12,6 +12,7 @@ return [
         'path' => storage_path('logs/app.log'),
     ],
     'providers' => [
+        App\Providers\ConfigServiceProvider::class,
         App\Providers\FrameworkServiceProvider::class,
         App\Providers\AppServiceProvider::class,
         App\Providers\CacheServiceProvider::class,

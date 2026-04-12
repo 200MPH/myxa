@@ -83,6 +83,13 @@ if (!function_exists('env')) {
     }
 }
 
+if (!function_exists('config')) {
+    function config(?string $key = null, mixed $default = null): mixed
+    {
+        return \App\Support\Facades\Config::get($key, $default);
+    }
+}
+
 if (!function_exists('myxa_request_expects_json')) {
     function myxa_request_expects_json(): bool
     {

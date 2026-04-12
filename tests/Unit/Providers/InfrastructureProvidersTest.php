@@ -6,10 +6,12 @@ namespace Test\Unit\Providers;
 
 use App\Config\ConfigRepository;
 use App\Providers\CacheServiceProvider;
+use App\Providers\ConfigServiceProvider;
 use App\Providers\DatabaseServiceProvider;
 use App\Providers\FrameworkServiceProvider;
 use App\Providers\RedisServiceProvider;
 use App\Providers\RoutesServiceProvider;
+use App\Support\Facades\Config;
 use Myxa\Application;
 use Myxa\Cache\CacheManager;
 use Myxa\Container\Exceptions\NotFoundException;
@@ -22,6 +24,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use Test\TestCase;
 
 #[CoversClass(CacheServiceProvider::class)]
+#[CoversClass(ConfigServiceProvider::class)]
 #[CoversClass(DatabaseServiceProvider::class)]
 #[CoversClass(FrameworkServiceProvider::class)]
 #[CoversClass(RedisServiceProvider::class)]
@@ -38,6 +41,20 @@ final class InfrastructureProvidersTest extends TestCase
         self::assertInstanceOf(Request::class, $app->make(Request::class));
         self::assertInstanceOf(Response::class, $app->make(Response::class));
         self::assertInstanceOf(Router::class, $app->make(Router::class));
+    }
+
+    public function testConfigProviderInitializesFacadeDuringRegistration(): void
+    {
+        $app = new Application();
+        $app->instance(ConfigRepository::class, new ConfigRepository([
+            'app' => [
+                'name' => 'Provider Config',
+            ],
+        ]));
+
+        $app->register(ConfigServiceProvider::class);
+
+        self::assertSame('Provider Config', Config::get('app.name'));
     }
 
     public function testCacheProviderRegistersConfiguredFileStore(): void
