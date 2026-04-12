@@ -16,15 +16,15 @@ register_shutdown_function(static function (): void {
     }
 
     $fatalTypes = [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR];
-    if (!in_array($error['type'] ?? null, $fatalTypes, true)) {
+    if (!in_array($error['type'], $fatalTypes, true)) {
         return;
     }
 
     myxa_emergency_log(sprintf(
         'Fatal error: %s in %s:%d',
-        (string) ($error['message'] ?? 'Unknown error'),
-        (string) ($error['file'] ?? 'unknown file'),
-        (int) ($error['line'] ?? 0),
+        $error['message'],
+        $error['file'],
+        $error['line'],
     ));
     myxa_emit_emergency_response();
 });

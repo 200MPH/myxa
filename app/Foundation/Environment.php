@@ -45,10 +45,13 @@ final class Environment
                 continue;
             }
 
-            if ($value !== '' && (
-                (str_starts_with($value, '"') && str_ends_with($value, '"'))
-                || (str_starts_with($value, '\'') && str_ends_with($value, '\''))
-            )) {
+            if (
+                $value !== ''
+                && (
+                    (str_starts_with($value, '"') && str_ends_with($value, '"'))
+                    || (str_starts_with($value, '\'') && str_ends_with($value, '\''))
+                )
+            ) {
                 $value = substr($value, 1, -1);
             } else {
                 $commentOffset = strpos($value, ' #');

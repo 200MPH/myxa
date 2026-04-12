@@ -1,5 +1,7 @@
 .env
 .codex
 vendor
+build
 storage/logs/*
 storage/sessions/*
+.phpunit.result.cache

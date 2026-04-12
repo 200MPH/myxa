@@ -60,9 +60,12 @@ if (!function_exists('storage_path')) {
 if (!function_exists('env')) {
     function env(string $key, mixed $default = null): mixed
     {
-        $value = $_ENV[$key] ?? $_SERVER[$key] ?? getenv($key);
+        $value = $_ENV[$key] ?? $_SERVER[$key] ?? null;
+        if ($value === null) {
+            $value = getenv($key);
+        }
 
-        if ($value === false || $value === null) {
+        if ($value === false) {
             return $default;
         }
 

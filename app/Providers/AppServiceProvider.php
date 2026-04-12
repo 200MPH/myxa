@@ -35,7 +35,7 @@ final class AppServiceProvider extends ServiceProvider
             LoggerInterface::class,
             static function (Application $app): LoggerInterface {
                 $config = $app->make(ConfigRepository::class);
-                $path = (string) $config->get('app.log.path', storage_path('data/logs/app.log'));
+                $path = (string) $config->get('app.log.path', storage_path('logs/app.log'));
 
                 return new FileLogger($path);
             },

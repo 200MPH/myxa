@@ -5,8 +5,8 @@ COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
 RUN apk add --no-cache bash git unzip \
     && apk add --no-cache --virtual .build-deps $PHPIZE_DEPS \
     && docker-php-ext-install -j"$(nproc)" mysqli pdo_mysql opcache \
-    && pecl install redis \
-    && docker-php-ext-enable redis \
+    && pecl install redis pcov \
+    && docker-php-ext-enable redis pcov \
     && git config --system --add safe.directory /var/www/html \
     && apk del .build-deps
 

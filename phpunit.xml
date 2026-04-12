@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit bootstrap="tests/bootstrap.php">
+  <source>
+    <include>
+      <directory>app</directory>
+      <directory>bootstrap</directory>
+      <directory>config</directory>
+      <directory>public</directory>
+      <directory>routes</directory>
+    </include>
+  </source>
+  <testsuites>
+    <testsuite name="Myxa App Test Suite">
+      <directory>tests</directory>
+    </testsuite>
+  </testsuites>
+</phpunit>
