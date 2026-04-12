@@ -11,12 +11,11 @@
   ],
   "autoload": {
     "psr-4": {
-      "Myxa\\": "core/",
       "App\\": "app/"
     }
   },
   "require": {
-    "php": ">=8.3",
-    "200mph/myxa-framework": "1.0.*"
+    "php": ">=8.4",
+    "200mph/myxa-framework": "dev-develop"
   }
 }

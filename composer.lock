@@ -4,20 +4,20 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "c737883db4a6aa589c420b6a87b0d499",
+    "content-hash": "cf82a2d91e8a611abec2b795bb83a5d8",
     "packages": [
         {
             "name": "200mph/myxa-framework",
-            "version": "1.0.0",
+            "version": "dev-develop",
             "source": {
                 "type": "git",
                 "url": "https://github.com/200MPH/myxa-framework.git",
-                "reference": "fc4ba78981afdfbc40ad8433586f49918862214e"
+                "reference": "5e000bec8e9e27e6cb564c7c7843b7e91ad4200f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/200MPH/myxa-framework/zipball/fc4ba78981afdfbc40ad8433586f49918862214e",
-                "reference": "fc4ba78981afdfbc40ad8433586f49918862214e",
+                "url": "https://api.github.com/repos/200MPH/myxa-framework/zipball/5e000bec8e9e27e6cb564c7c7843b7e91ad4200f",
+                "reference": "5e000bec8e9e27e6cb564c7c7843b7e91ad4200f",
                 "shasum": ""
             },
             "require": {
@@ -51,12 +51,12 @@
                     "email": "wojciech.brozyna@gmail.com"
                 }
             ],
-            "description": "Myxa core framework package",
+            "description": "The core framework package for Myxa, a lightweight and flexible AI-powered PHP framework.",
             "support": {
                 "issues": "https://github.com/200MPH/myxa-framework/issues",
-                "source": "https://github.com/200MPH/myxa-framework/tree/1.0.0"
+                "source": "https://github.com/200MPH/myxa-framework/tree/develop"
             },
-            "time": "2026-04-08T19:56:49+00:00"
+            "time": "2026-04-11T22:15:46+00:00"
         },
         {
             "name": "psr/container",
@@ -115,11 +115,13 @@
     "packages-dev": [],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {},
+    "stability-flags": {
+        "200mph/myxa-framework": 20
+    },
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
-        "php": ">=8.3"
+        "php": ">=8.4"
     },
     "platform-dev": {},
     "plugin-api-version": "2.9.0"
