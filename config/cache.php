@@ -7,7 +7,7 @@ return [
     'stores' => [
         'local' => [
             'driver' => 'file',
-            'path' => storage_path('data/cache'),
+            'path' => storage_path('cache'),
         ],
     ],
     'routes' => [

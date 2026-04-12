@@ -4,7 +4,5 @@ vendor
 build
 storage/logs/*
 storage/sessions/*
-storage/data/cache/*
 storage/cache/framework/*
-storage/framework/cache/*
 .phpunit.result.cache

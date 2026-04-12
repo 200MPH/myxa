@@ -44,7 +44,7 @@ PHP settings are split by environment:
 
 ## Caching
 
-The app now wires the framework cache manager to a file-backed store in `storage/data/cache`.
+The app now wires the framework cache manager to a file-backed store in `storage/cache`.
 
 Route caching is intended for production deployments:
 

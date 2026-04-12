@@ -1,28 +1,57 @@
 <svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="myxa-gradient" x1="56" y1="48" x2="204" y2="206" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#14B8A6"/>
-      <stop offset="1" stop-color="#84CC16"/>
+    <linearGradient id="myxa-mark-edge" x1="42" y1="30" x2="196" y2="206" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#22D3EE"/>
+      <stop offset="0.48" stop-color="#14B8A6"/>
+      <stop offset="1" stop-color="#A3E635"/>
     </linearGradient>
+    <linearGradient id="myxa-mark-shell" x1="64" y1="52" x2="176" y2="186" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F8FAFC" stop-opacity="0.95"/>
+      <stop offset="1" stop-color="#DCE9F4" stop-opacity="0.9"/>
+    </linearGradient>
+    <radialGradient id="myxa-mark-halo" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(128 122) rotate(90) scale(106 106)">
+      <stop stop-color="#67E8F9" stop-opacity="0.34"/>
+      <stop offset="0.52" stop-color="#2DD4BF" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#A3E635" stop-opacity="0"/>
+    </radialGradient>
   </defs>
+
+  <circle cx="128" cy="128" r="96" fill="url(#myxa-mark-halo)"/>
   <path
-    d="M128 42L194 80V156L128 194L62 156V80L128 42Z"
-    stroke="url(#myxa-gradient)"
-    stroke-width="12"
+    d="M128 34L196 74V154L128 194L60 154V74L128 34Z"
+    fill="url(#myxa-mark-shell)"
+    stroke="url(#myxa-mark-edge)"
+    stroke-width="11"
     stroke-linejoin="round"
   />
   <path
-    d="M128 78V166M128 104L94 124M128 104L162 124M128 138L94 158M128 138L162 158"
-    stroke="url(#myxa-gradient)"
-    stroke-width="12"
+    d="M128 52L178 82V146L128 176L78 146V82L128 52Z"
+    fill="#F8FAFC"
+    fill-opacity="0.58"
+    stroke="#E2E8F0"
+    stroke-opacity="0.72"
+    stroke-width="3"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M128 76V160M128 104L96 124M128 104L160 124M128 132L98 150M128 132L158 150M128 132L128 160"
+    stroke="url(#myxa-mark-edge)"
+    stroke-width="10"
     stroke-linecap="round"
     stroke-linejoin="round"
   />
-  <circle cx="128" cy="78" r="10" fill="#0F172A"/>
-  <circle cx="128" cy="104" r="8" fill="#0F172A"/>
-  <circle cx="94" cy="124" r="8" fill="#0F172A"/>
-  <circle cx="162" cy="124" r="8" fill="#0F172A"/>
-  <circle cx="128" cy="138" r="8" fill="#0F172A"/>
-  <circle cx="94" cy="158" r="8" fill="#0F172A"/>
-  <circle cx="162" cy="158" r="8" fill="#0F172A"/>
+  <path
+    d="M128 76L144 92M128 76L112 92"
+    stroke="#22D3EE"
+    stroke-opacity="0.78"
+    stroke-width="5"
+    stroke-linecap="round"
+  />
+  <circle cx="128" cy="76" r="13" fill="#03111E" stroke="#D9F99D" stroke-width="4"/>
+  <circle cx="128" cy="104" r="9" fill="#03111E" stroke="#5EEAD4" stroke-width="3.5"/>
+  <circle cx="96" cy="124" r="8.5" fill="#03111E" stroke="#67E8F9" stroke-width="3.5"/>
+  <circle cx="160" cy="124" r="8.5" fill="#03111E" stroke="#67E8F9" stroke-width="3.5"/>
+  <circle cx="98" cy="150" r="8.5" fill="#03111E" stroke="#A3E635" stroke-width="3.5"/>
+  <circle cx="128" cy="160" r="8.5" fill="#03111E" stroke="#A3E635" stroke-width="3.5"/>
+  <circle cx="158" cy="150" r="8.5" fill="#03111E" stroke="#A3E635" stroke-width="3.5"/>
 </svg>

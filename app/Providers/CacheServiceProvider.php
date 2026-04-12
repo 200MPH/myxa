@@ -32,7 +32,7 @@ final class CacheServiceProvider extends ServiceProvider
         }
 
         $defaultStore = (string) $config->get('cache.default', array_key_first($stores) ?? 'local');
-        $defaultPath = storage_path('data/cache');
+        $defaultPath = storage_path('cache');
 
         $defaultStoreConfiguration = $config->get(sprintf('cache.stores.%s', $defaultStore), []);
         if (is_array($defaultStoreConfiguration) && is_string($defaultStoreConfiguration['path'] ?? null)) {
