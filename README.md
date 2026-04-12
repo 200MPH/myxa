@@ -23,6 +23,7 @@ This project ships with a local stack built around:
 
 - Install PHP dependencies: `docker compose exec app composer install`
 - Open a shell in the PHP container: `docker compose exec app sh`
+- Show available app commands: `./myxa`
 - Build the route cache: `docker compose exec app composer route:cache`
 - Clear the route cache: `docker compose exec app composer route:clear`
 - Stop the stack: `docker compose down`
@@ -48,6 +49,7 @@ The app now wires the framework cache manager to a file-backed store in `storage
 Route caching is intended for production deployments:
 
 - `APP_ENV=production` enables route cache usage by default
+- `./myxa` shows every command registered by `App\Console\Kernel`
 - `composer route:cache` compiles `routes/*.php` into `storage/cache/framework/routes.php`
 - `composer route:clear` removes the compiled manifest
 

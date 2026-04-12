@@ -33,8 +33,8 @@
     "test:unit": "vendor/bin/phpunit -c phpunit.xml tests/Unit",
     "test:coverage": "vendor/bin/phpunit -c phpunit.xml --coverage-text",
     "test:coverage:html": "vendor/bin/phpunit -c phpunit.xml --coverage-html build/coverage",
-    "route:cache": "php console route:cache",
-    "route:clear": "php console route:clear",
+    "route:cache": "./myxa route:cache",
+    "route:clear": "./myxa route:clear",
     "phpstan": "vendor/bin/phpstan analyse -c phpstan.neon.dist",
     "phpcs": "vendor/bin/phpcs --standard=phpcs.xml.dist"
   }

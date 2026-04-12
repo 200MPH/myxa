@@ -1,0 +1,29 @@
+#!/usr/bin/env sh
+
+set -eu
+
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+PHP_BOOTSTRAP='
+$argv = $_SERVER["argv"] ?? [];
+array_shift($argv);
+array_unshift($argv, "myxa");
+$kernel = require getenv("MYXA_CLI_BASE_PATH") . "/bootstrap/console.php";
+exit($kernel->handle($argv));
+'
+
+if [ -f "/.dockerenv" ]; then
+    export MYXA_CLI_BASE_PATH="$SCRIPT_DIR"
+    exec php -r "$PHP_BOOTSTRAP" "$@"
+fi
+
+if command -v docker >/dev/null 2>&1; then
+    exec docker compose exec -e MYXA_CLI_BASE_PATH=/var/www/html app php -r "$PHP_BOOTSTRAP" "$@"
+fi
+
+if command -v php >/dev/null 2>&1; then
+    export MYXA_CLI_BASE_PATH="$SCRIPT_DIR"
+    exec php -r "$PHP_BOOTSTRAP" "$@"
+fi
+
+printf '%s\n' 'Unable to run myxa: neither Docker nor PHP is available.' >&2
+exit 1
