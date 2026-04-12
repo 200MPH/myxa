@@ -1,3 +1,5 @@
 .env
 .codex
 vendor
+storage/logs/*
+storage/sessions/*
