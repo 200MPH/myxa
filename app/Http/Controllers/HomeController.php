@@ -28,7 +28,7 @@ final class HomeController
 
         $databaseLabel = sprintf(
             '%s:%s/%s',
-            (string) ($dbConfig['host'] ?? 'db'),
+            (string) ($dbConfig['host'] ?? 'localhost'),
             (string) ($dbConfig['port'] ?? '3306'),
             (string) ($dbConfig['database'] ?? 'myxa'),
         );
