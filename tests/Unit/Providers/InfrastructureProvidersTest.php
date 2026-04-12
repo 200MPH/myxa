@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Test\Unit\Providers;
 
 use App\Config\ConfigRepository;
+use App\Providers\CacheServiceProvider;
 use App\Providers\DatabaseServiceProvider;
 use App\Providers\FrameworkServiceProvider;
 use App\Providers\RedisServiceProvider;
 use App\Providers\RoutesServiceProvider;
 use Myxa\Application;
+use Myxa\Cache\CacheManager;
 use Myxa\Container\Exceptions\NotFoundException;
 use Myxa\Database\DatabaseManager;
 use Myxa\Http\Request;
@@ -19,6 +21,7 @@ use Myxa\Routing\Router;
 use PHPUnit\Framework\Attributes\CoversClass;
 use Test\TestCase;
 
+#[CoversClass(CacheServiceProvider::class)]
 #[CoversClass(DatabaseServiceProvider::class)]
 #[CoversClass(FrameworkServiceProvider::class)]
 #[CoversClass(RedisServiceProvider::class)]
@@ -35,6 +38,45 @@ final class InfrastructureProvidersTest extends TestCase
         self::assertInstanceOf(Request::class, $app->make(Request::class));
         self::assertInstanceOf(Response::class, $app->make(Response::class));
         self::assertInstanceOf(Router::class, $app->make(Router::class));
+    }
+
+    public function testCacheProviderRegistersConfiguredFileStore(): void
+    {
+        $cacheDirectory = storage_path('framework/testing/cache-provider-' . uniqid('', true));
+
+        $app = new Application();
+        $app->instance(ConfigRepository::class, new ConfigRepository([
+            'cache' => [
+                'default' => 'local',
+                'stores' => [
+                    'local' => [
+                        'driver' => 'file',
+                        'path' => $cacheDirectory,
+                    ],
+                ],
+            ],
+        ]));
+
+        try {
+            $app->register(CacheServiceProvider::class);
+            $app->boot();
+
+            $manager = $app->make(CacheManager::class);
+            $manager->put('framework:ping', ['ok' => true]);
+
+            self::assertSame('local', $manager->getDefaultStore());
+            self::assertSame(['ok' => true], $manager->get('framework:ping'));
+        } finally {
+            foreach (glob($cacheDirectory . '/*.cache') ?: [] as $cacheFile) {
+                if (is_file($cacheFile)) {
+                    unlink($cacheFile);
+                }
+            }
+
+            if (is_dir($cacheDirectory)) {
+                rmdir($cacheDirectory);
+            }
+        }
     }
 
     public function testDatabaseProviderRegistersConfiguredConnections(): void
@@ -151,6 +193,57 @@ PHP;
         } finally {
             if (is_file($routeFile)) {
                 unlink($routeFile);
+            }
+        }
+    }
+
+    public function testRoutesProviderLoadsCachedRoutesWhenEnabled(): void
+    {
+        $cachePath = storage_path('framework/testing/routes-provider-cache-' . uniqid('', true) . '.php');
+        $cacheDirectory = dirname($cachePath);
+
+        if (!is_dir($cacheDirectory)) {
+            mkdir($cacheDirectory, 0777, true);
+        }
+
+        file_put_contents($cachePath, <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+use Myxa\Support\Facades\Route;
+
+Route::get('/__cached-provider-route', static fn (): string => 'cached-route');
+PHP);
+
+        $app = new Application();
+        $app->instance(ConfigRepository::class, new ConfigRepository([
+            'cache' => [
+                'routes' => [
+                    'enabled' => true,
+                    'path' => $cachePath,
+                ],
+            ],
+        ]));
+
+        try {
+            $app->register(FrameworkServiceProvider::class);
+            $app->register(RoutesServiceProvider::class);
+            $app->boot();
+
+            $result = $app->make(Router::class)->dispatch(new Request(server: [
+                'REQUEST_METHOD' => 'GET',
+                'REQUEST_URI' => '/__cached-provider-route',
+            ]));
+
+            self::assertSame('cached-route', $result);
+        } finally {
+            if (is_file($cachePath)) {
+                unlink($cachePath);
+            }
+
+            if (is_dir($cacheDirectory) && (glob($cacheDirectory . '/*') ?: []) === []) {
+                rmdir($cacheDirectory);
             }
         }
     }

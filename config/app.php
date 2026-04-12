@@ -14,8 +14,9 @@ return [
     'providers' => [
         App\Providers\FrameworkServiceProvider::class,
         App\Providers\AppServiceProvider::class,
+        App\Providers\CacheServiceProvider::class,
+        App\Providers\RoutesServiceProvider::class,
         App\Providers\DatabaseServiceProvider::class,
         App\Providers\RedisServiceProvider::class,
-        App\Providers\RoutesServiceProvider::class,
     ],
 ];

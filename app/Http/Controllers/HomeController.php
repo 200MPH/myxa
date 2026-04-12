@@ -35,7 +35,7 @@ final class HomeController
 
         $redisLabel = sprintf(
             '%s:%s',
-            (string) ($redisConfig['host'] ?? 'redis'),
+            (string) ($redisConfig['host'] ?? 'localhost'),
             (string) ($redisConfig['port'] ?? '6379'),
         );
 

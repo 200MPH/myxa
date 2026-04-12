@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Config\ConfigRepository;
+use App\Routing\RouteCache;
 use Myxa\Support\ServiceProvider;
 
 final class RoutesServiceProvider extends ServiceProvider
@@ -14,15 +16,12 @@ final class RoutesServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        $routeFiles = glob(route_path('*.php')) ?: [];
-        sort($routeFiles);
+        $config = $this->app()->make(ConfigRepository::class);
 
-        foreach ($routeFiles as $routeFile) {
-            if (!is_file($routeFile)) {
-                continue;
-            }
-
-            require $routeFile;
+        if (RouteCache::isEnabled($config) && RouteCache::loadCachedRoutes($config)) {
+            return;
         }
+
+        RouteCache::loadSourceRoutes();
     }
 }
