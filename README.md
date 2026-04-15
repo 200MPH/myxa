@@ -24,6 +24,8 @@ This project ships with a local stack built around:
 - Install PHP dependencies: `docker compose exec app composer install`
 - Open a shell in the PHP container: `docker compose exec app sh`
 - Show available app commands: `./myxa`
+- Show the current app version: `./myxa version:show`
+- Generate `version.json` from Git metadata: `./myxa version:sync`
 - Build the route cache: `docker compose exec app composer route:cache`
 - Clear the route cache: `docker compose exec app composer route:clear`
 - Stop the stack: `docker compose down`
@@ -54,6 +56,23 @@ Route caching is intended for production deployments:
 - `composer route:clear` removes the compiled manifest
 
 Route cache compilation only supports cacheable route definitions. Closure handlers or closure-based middleware should be replaced with controller actions or class-based middleware before caching.
+
+## Versioning
+
+Application version metadata is stored in a generated `version.json` manifest at the project root.
+
+- `./myxa version:sync` reads Git metadata and writes the manifest
+- `./myxa version:show` prints the currently resolved version details
+- `./myxa --version` uses the same resolved application version
+- `/health` includes the resolved version and version source
+
+Recommended workflow:
+
+1. Create and push your Git tag as usual.
+2. During CI or deployment, run `./myxa version:sync`.
+3. Ship the generated `version.json` with the built artifact or deploy output.
+
+`version.json` is intentionally ignored by Git so runtime code can read a stable manifest without requiring `.git` to be present in production.
 
 ## Assets
 

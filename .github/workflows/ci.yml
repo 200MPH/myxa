@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+          tools: composer:v2
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Generate version manifest
+        run: ./myxa version:sync
+
+      - name: Show resolved version
+        run: ./myxa version:show
+
+      - name: Run test suite
+        run: vendor/bin/phpunit -c phpunit.xml
+
+      - name: Run static analysis
+        run: vendor/bin/phpstan analyse -c phpstan.neon.dist
+
+      - name: Upload version manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: version-manifest
+          path: version.json

@@ -9,8 +9,11 @@ use App\Console\Commands\MaintenanceOnCommand;
 use App\Console\Commands\MaintenanceStatusCommand;
 use App\Console\Commands\RouteCacheCommand;
 use App\Console\Commands\RouteClearCommand;
+use App\Console\Commands\VersionShowCommand;
+use App\Console\Commands\VersionSyncCommand;
 use App\Config\ConfigRepository;
 use App\Maintenance\MaintenanceMode;
+use App\Version\ApplicationVersion;
 use Myxa\Application;
 use Myxa\Console\ConsoleKernel;
 
@@ -18,7 +21,7 @@ final class Kernel extends ConsoleKernel
 {
     public function __construct(private readonly Application $app)
     {
-        parent::__construct($app);
+        parent::__construct($app, version: $app->make(ApplicationVersion::class)->current());
     }
 
     protected function commands(): iterable
@@ -27,6 +30,8 @@ final class Kernel extends ConsoleKernel
             MaintenanceOnCommand::class,
             MaintenanceOffCommand::class,
             MaintenanceStatusCommand::class,
+            VersionSyncCommand::class,
+            VersionShowCommand::class,
             RouteCacheCommand::class,
             RouteClearCommand::class,
         ];
@@ -118,6 +123,8 @@ final class Kernel extends ConsoleKernel
             'maintenance:on',
             'maintenance:off',
             'maintenance:status',
+            'version:sync',
+            'version:show',
         ], true)) {
             return true;
         }

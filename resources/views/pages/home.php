@@ -24,6 +24,10 @@
                         <?= $_e($appEnv) ?>
                     </li>
                     <li>
+                        <strong>Version</strong>
+                        <?= $_e($appVersion) ?> <small>(<?= $_e($versionSource) ?>)</small>
+                    </li>
+                    <li>
                         <strong>Database</strong>
                         <?= $_e($databaseLabel) ?>
                     </li>

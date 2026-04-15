@@ -5,13 +5,19 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Config\ConfigRepository;
+use App\Version\ApplicationVersion;
 use Myxa\Http\Request;
 use Myxa\Http\Response;
 use Myxa\Support\Html\Html;
 
 final class HomeController
 {
-    public function __invoke(Request $request, ConfigRepository $config, Html $html): Response
+    public function __invoke(
+        Request $request,
+        ConfigRepository $config,
+        Html $html,
+        ApplicationVersion $version,
+    ): Response
     {
         $appName = (string) $config->get('app.name', 'Myxa App');
         $appUrl = (string) $config->get('app.url', $request->fullUrl());
@@ -25,6 +31,7 @@ final class HomeController
         $faviconPath = '/assets/images/myxa-mark.svg';
         $healthPath = '/health';
         $logoPreviewPath = '/logo-preview.php';
+        $versionDetails = $version->details();
 
         $databaseLabel = sprintf(
             '%s:%s/%s',
@@ -45,11 +52,13 @@ final class HomeController
                 'appName' => $appName,
                 'appUrl' => $appUrl,
                 'appEnv' => $appEnv,
+                'appVersion' => $versionDetails['version'],
                 'databaseLabel' => $databaseLabel,
                 'redisLabel' => $redisLabel,
                 'logoPath' => $logoPath,
                 'healthPath' => $healthPath,
                 'logoPreviewPath' => $logoPreviewPath,
+                'versionSource' => $versionDetails['source'],
             ],
             'layouts/app',
             [

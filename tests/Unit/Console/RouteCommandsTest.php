@@ -10,6 +10,8 @@ use App\Console\Commands\MaintenanceStatusCommand;
 use App\Console\Kernel;
 use App\Console\Commands\RouteCacheCommand;
 use App\Console\Commands\RouteClearCommand;
+use App\Console\Commands\VersionShowCommand;
+use App\Console\Commands\VersionSyncCommand;
 use App\Config\ConfigRepository;
 use App\Foundation\ApplicationFactory;
 use App\Maintenance\MaintenanceMode;
@@ -24,6 +26,8 @@ use Test\TestCase;
 #[CoversClass(MaintenanceOnCommand::class)]
 #[CoversClass(MaintenanceOffCommand::class)]
 #[CoversClass(MaintenanceStatusCommand::class)]
+#[CoversClass(VersionSyncCommand::class)]
+#[CoversClass(VersionShowCommand::class)]
 #[CoversClass(Kernel::class)]
 final class RouteCommandsTest extends TestCase
 {

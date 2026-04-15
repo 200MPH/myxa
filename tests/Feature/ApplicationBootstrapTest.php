@@ -29,6 +29,8 @@ final class ApplicationBootstrapTest extends TestCase
         self::assertSame('application/json; charset=UTF-8', $healthResponse->header('Content-Type'));
         self::assertStringContainsString('"ok":true', $healthResponse->content());
         self::assertStringContainsString('"path":"\/health"', $healthResponse->content());
+        self::assertStringContainsString('"version":"', $healthResponse->content());
+        self::assertStringContainsString('"version_source":"', $healthResponse->content());
 
         $homeResponse = $kernel->handle(new Request(server: [
             'REQUEST_METHOD' => 'GET',
@@ -38,6 +40,7 @@ final class ApplicationBootstrapTest extends TestCase
         self::assertSame(200, $homeResponse->statusCode());
         self::assertSame('text/html; charset=UTF-8', $homeResponse->header('Content-Type'));
         self::assertStringContainsString('Myxa App is running :-)', $homeResponse->content());
+        self::assertStringContainsString('Version', $homeResponse->content());
         self::assertStringContainsString('Health endpoint', $homeResponse->content());
     }
 

@@ -15,7 +15,5 @@ return [
     | - 'migrate:*'
     |
     */
-    'allowed_commands' => [
-        'route:clear'
-    ],
+    'allowed_commands' => [],
 ];
