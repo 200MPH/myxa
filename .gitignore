@@ -3,6 +3,7 @@
 vendor
 build
 storage/logs/*
+storage/maintenance/*
 storage/sessions/*
 storage/cache/framework/*
 .phpunit.result.cache

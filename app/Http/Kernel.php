@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http;
 
+use App\Maintenance\MaintenanceMode;
+use App\Maintenance\MaintenanceResponseFactory;
 use Myxa\Application;
 use Myxa\Http\ExceptionHandlerInterface;
 use Myxa\Http\Request;
@@ -20,6 +22,13 @@ final class Kernel
     public function handle(?Request $request = null): Response
     {
         $request ??= $this->app->make(Request::class);
+
+        if ($this->app->make(MaintenanceMode::class)->isEnabled()) {
+            return $this->app->make(MaintenanceResponseFactory::class)->forRequest(
+                $request,
+                $this->app->make(MaintenanceMode::class)->payload(),
+            );
+        }
 
         try {
             $result = $this->app->make(Router::class)->dispatch($request);

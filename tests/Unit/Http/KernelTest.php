@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Test\Unit\Http;
 
 use App\Http\Kernel;
+use App\Maintenance\MaintenanceMode;
 use Myxa\Application;
 use Myxa\Http\ExceptionHandlerInterface;
 use Myxa\Http\Request;
@@ -178,6 +179,52 @@ final class KernelTest extends TestCase
         self::assertSame(500, $response->statusCode());
         self::assertSame('text/plain; charset=UTF-8', $response->header('Content-Type'));
         self::assertSame('Server Error', $response->content());
+    }
+
+    public function testKernelShortCircuitsBrowserRequestsDuringMaintenanceMode(): void
+    {
+        $maintenance = new MaintenanceMode(base_path());
+        $maintenance->enable('phpunit');
+
+        try {
+            $kernel = $this->makeKernelWithRoute(static fn (): string => 'reachable');
+
+            $response = $kernel->handle(new Request(server: [
+                'REQUEST_METHOD' => 'GET',
+                'REQUEST_URI' => '/test',
+            ]));
+
+            self::assertSame(503, $response->statusCode());
+            self::assertSame('text/html; charset=UTF-8', $response->header('Content-Type'));
+            self::assertStringContainsString('temporarily offline for maintenance', $response->content());
+        } finally {
+            $maintenance->disable();
+        }
+    }
+
+    public function testKernelShortCircuitsApiRequestsDuringMaintenanceMode(): void
+    {
+        $maintenance = new MaintenanceMode(base_path());
+        $maintenance->enable('phpunit');
+
+        try {
+            $kernel = $this->makeKernelWithRoute(static fn (): array => ['ok' => true]);
+
+            $response = $kernel->handle(new Request(server: [
+                'REQUEST_METHOD' => 'GET',
+                'REQUEST_URI' => '/api/test',
+                'HTTP_ACCEPT' => 'application/json',
+            ]));
+
+            self::assertSame(503, $response->statusCode());
+            self::assertSame('application/json; charset=UTF-8', $response->header('Content-Type'));
+            self::assertSame(
+                '{"error":{"type":"maintenance_mode","message":"Service Unavailable","status":503}}',
+                $response->content(),
+            );
+        } finally {
+            $maintenance->disable();
+        }
     }
 
     private function makeKernelWithRoute(callable $handler, ?ExceptionHandlerInterface $exceptionHandler = null): Kernel
