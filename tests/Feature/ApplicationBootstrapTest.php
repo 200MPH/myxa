@@ -13,6 +13,20 @@ use Test\TestCase;
 #[CoversNothing]
 final class ApplicationBootstrapTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->cleanupMaintenanceState();
+    }
+
+    protected function tearDown(): void
+    {
+        $this->cleanupMaintenanceState();
+
+        parent::tearDown();
+    }
+
     public function testHttpBootstrapReturnsKernelAndServesConfiguredRoutes(): void
     {
         $kernel = require base_path('bootstrap/http.php');
@@ -49,5 +63,23 @@ final class ApplicationBootstrapTest extends TestCase
         $kernel = require base_path('bootstrap/console.php');
 
         self::assertInstanceOf(ConsoleKernel::class, $kernel);
+    }
+
+    private function cleanupMaintenanceState(): void
+    {
+        $markerPath = base_path('maintenance.json');
+        if (is_file($markerPath)) {
+            unlink($markerPath);
+        }
+
+        $activityPath = storage_path('maintenance/console-activity.json');
+        if (is_file($activityPath)) {
+            unlink($activityPath);
+        }
+
+        $directory = dirname($activityPath);
+        if (is_dir($directory) && (glob($directory . '/*') ?: []) === []) {
+            rmdir($directory);
+        }
     }
 }

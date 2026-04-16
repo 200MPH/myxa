@@ -4,21 +4,6 @@ declare(strict_types=1);
 
 namespace App\Console;
 
-use App\Console\Commands\MaintenanceOffCommand;
-use App\Console\Commands\MaintenanceOnCommand;
-use App\Console\Commands\MaintenanceStatusCommand;
-use App\Console\Commands\MakeMigrationCommand;
-use App\Console\Commands\MakeModelCommand;
-use App\Console\Commands\MigrateCommand;
-use App\Console\Commands\MigrateDiffCommand;
-use App\Console\Commands\MigrateReverseCommand;
-use App\Console\Commands\MigrateRollbackCommand;
-use App\Console\Commands\MigrateSnapshotCommand;
-use App\Console\Commands\MigrateStatusCommand;
-use App\Console\Commands\RouteCacheCommand;
-use App\Console\Commands\RouteClearCommand;
-use App\Console\Commands\VersionShowCommand;
-use App\Console\Commands\VersionSyncCommand;
 use App\Config\ConfigRepository;
 use App\Maintenance\MaintenanceMode;
 use App\Version\ApplicationVersion;
@@ -34,23 +19,7 @@ final class Kernel extends ConsoleKernel
 
     protected function commands(): iterable
     {
-        return [
-            MaintenanceOnCommand::class,
-            MaintenanceOffCommand::class,
-            MaintenanceStatusCommand::class,
-            MakeMigrationCommand::class,
-            MakeModelCommand::class,
-            MigrateCommand::class,
-            MigrateRollbackCommand::class,
-            MigrateStatusCommand::class,
-            MigrateSnapshotCommand::class,
-            MigrateReverseCommand::class,
-            MigrateDiffCommand::class,
-            VersionSyncCommand::class,
-            VersionShowCommand::class,
-            RouteCacheCommand::class,
-            RouteClearCommand::class,
-        ];
+        return (new CommandDiscovery())->discover();
     }
 
     /**
