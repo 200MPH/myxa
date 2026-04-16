@@ -155,6 +155,17 @@ final class MigrationWorkflowTest extends TestCase
         self::assertStringContainsString('use HasTimestamps;', $source);
     }
 
+    public function testModelScaffolderAcceptsSlashDelimitedNames(): void
+    {
+        $path = $this->modelScaffolder->make('Admin/AuditLog');
+        $source = (string) file_get_contents($path);
+
+        self::assertSame($this->rootPath . '/models/Admin/AuditLog.php', $path);
+        self::assertStringContainsString('namespace App\\Models\\Admin;', $source);
+        self::assertStringContainsString('final class AuditLog extends Model', $source);
+        self::assertStringContainsString("protected string \$table = 'audit_logs';", $source);
+    }
+
     private function makeConfig(): MigrationConfig
     {
         return new MigrationConfig(new ConfigRepository([

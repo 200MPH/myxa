@@ -58,6 +58,21 @@ final class CommandScaffolderTest extends TestCase
         self::assertStringContainsString("return 'prune:cache';", $source);
     }
 
+    public function testMakeAcceptsSlashDelimitedCommandNames(): void
+    {
+        $scaffolder = new CommandScaffolder($this->commandsPath);
+
+        $result = $scaffolder->make('Admin/SyncUsers');
+        $source = file_get_contents($result['path']);
+
+        self::assertSame($this->commandsPath . '/Admin/SyncUsersCommand.php', $result['path']);
+        self::assertSame('App\\Console\\Commands\\Admin\\SyncUsersCommand', $result['class']);
+        self::assertSame('sync:users', $result['command']);
+        self::assertIsString($source);
+        self::assertStringContainsString('namespace App\\Console\\Commands\\Admin;', $source);
+        self::assertStringContainsString('final class SyncUsersCommand extends Command', $source);
+    }
+
     private function removeDirectory(string $path): void
     {
         if (!is_dir($path)) {

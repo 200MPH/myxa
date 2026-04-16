@@ -26,7 +26,8 @@ final class CommandScaffolder
      */
     public function make(string $name, ?string $commandName = null, ?string $description = null): array
     {
-        $namespace = Naming::namespace($name, 'App\\Console\\Commands') ?? 'App\\Console\\Commands';
+        $name = $this->normalizeName($name);
+        $namespace = $this->normalizeNamespace($name);
         $className = Naming::classBasename($name);
         $className = str_ends_with($className, 'Command') ? $className : $className . 'Command';
 
@@ -60,6 +61,43 @@ final class CommandScaffolder
             'class' => $fqcn,
             'command' => $commandName,
         ];
+    }
+
+    /**
+     * Normalize slash-delimited command input into PHP namespace format.
+     */
+    public function normalizeName(string $name): string
+    {
+        $normalized = trim(str_replace('/', '\\', $name), '\\');
+
+        if ($normalized === '') {
+            throw new RuntimeException('Command name could not be resolved.');
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * Normalize a command name into an App\Console\Commands namespace.
+     */
+    public function normalizeNamespace(string $name): string
+    {
+        $rootNamespace = 'App\\Console\\Commands';
+        $namespace = Naming::namespace($name, $rootNamespace) ?? $rootNamespace;
+
+        if ($namespace === 'App' || $namespace === 'App\\Console') {
+            return $rootNamespace;
+        }
+
+        if (str_starts_with($namespace, $rootNamespace)) {
+            return $namespace;
+        }
+
+        if (str_starts_with($namespace, 'App\\')) {
+            throw new RuntimeException(sprintf('Command namespace must live under %s.', $rootNamespace));
+        }
+
+        return $rootNamespace . '\\' . trim($namespace, '\\');
     }
 
     /**
@@ -133,6 +171,7 @@ final class CommandScaffolder
 
         return implode("\n", $lines);
     }
+
     private function escapeSingleQuoted(string $value): string
     {
         return str_replace(['\\', '\''], ['\\\\', '\\\''], $value);

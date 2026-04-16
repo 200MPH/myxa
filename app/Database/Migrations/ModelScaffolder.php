@@ -30,7 +30,8 @@ final class ModelScaffolder
         ?string $fromMigration = null,
         ?string $connection = null,
     ): string {
-        $namespace = Naming::namespace($name, $this->config->modelNamespace());
+        $name = $this->normalizeName($name);
+        $namespace = $this->normalizeNamespace($name);
         $className = Naming::classBasename($name);
 
         if (($fromTable !== null ? 1 : 0) + ($fromMigration !== null ? 1 : 0) > 1) {
@@ -51,12 +52,49 @@ final class ModelScaffolder
             default => $this->skeleton($className, $namespace, $table),
         };
 
-        return $this->write($className, $source);
+        return $this->write($namespace, $className, $source);
     }
 
-    private function write(string $className, string $source): string
+    /**
+     * Normalize slash-delimited model input into PHP namespace format.
+     */
+    public function normalizeName(string $name): string
     {
-        $directory = $this->config->modelsPath();
+        $normalized = trim(str_replace('/', '\\', $name), '\\');
+
+        if ($normalized === '') {
+            throw new RuntimeException('Model name could not be resolved.');
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * Normalize a model name into the configured model namespace.
+     */
+    public function normalizeNamespace(string $name): string
+    {
+        $rootNamespace = trim($this->config->modelNamespace(), '\\');
+        $namespace = Naming::namespace($name, $rootNamespace) ?? $rootNamespace;
+
+        if ($namespace === 'App') {
+            return $rootNamespace;
+        }
+
+        if (str_starts_with($namespace, $rootNamespace)) {
+            return $namespace;
+        }
+
+        if (str_starts_with($namespace, 'App\\')) {
+            throw new RuntimeException(sprintf('Model namespace must live under %s.', $rootNamespace));
+        }
+
+        return $rootNamespace . '\\' . trim($namespace, '\\');
+    }
+
+    private function write(?string $namespace, string $className, string $source): string
+    {
+        $directory = $this->modelDirectory($namespace);
 
         if (!is_dir($directory) && !@mkdir($directory, 0777, true) && !is_dir($directory)) {
             throw new RuntimeException(sprintf('Unable to create models directory [%s].', $directory));
@@ -73,6 +111,25 @@ final class ModelScaffolder
         }
 
         return $path;
+    }
+
+    private function modelDirectory(?string $namespace): string
+    {
+        $rootNamespace = trim($this->config->modelNamespace(), '\\');
+        $directory = rtrim($this->config->modelsPath(), DIRECTORY_SEPARATOR);
+        $namespace = trim((string) $namespace, '\\');
+
+        if ($namespace === '' || $namespace === $rootNamespace) {
+            return $directory;
+        }
+
+        if (!str_starts_with($namespace, $rootNamespace . '\\')) {
+            throw new RuntimeException(sprintf('Model namespace must live under %s.', $rootNamespace));
+        }
+
+        $relativeNamespace = substr($namespace, strlen($rootNamespace) + 1);
+
+        return $directory . DIRECTORY_SEPARATOR . str_replace('\\', DIRECTORY_SEPARATOR, $relativeNamespace);
     }
 
     private function skeleton(string $className, ?string $namespace, ?string $table): string
