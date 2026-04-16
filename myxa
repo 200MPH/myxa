@@ -17,12 +17,20 @@ if [ -f "/.dockerenv" ]; then
 fi
 
 if command -v docker >/dev/null 2>&1; then
-    exec docker compose exec -e MYXA_CLI_BASE_PATH=/var/www/html app php -r "$PHP_BOOTSTRAP" "$@"
+    APP_CONTAINER_ID=$(docker compose ps -q app 2>/dev/null || true)
+
+    if [ -n "$APP_CONTAINER_ID" ]; then
+        exec docker compose exec -e MYXA_CLI_BASE_PATH=/var/www/html app php -r "$PHP_BOOTSTRAP" "$@"
+    fi
 fi
 
 if command -v php >/dev/null 2>&1; then
     export MYXA_CLI_BASE_PATH="$SCRIPT_DIR"
     exec php -r "$PHP_BOOTSTRAP" "$@"
+fi
+
+if command -v docker >/dev/null 2>&1; then
+    exec docker compose run --rm -e MYXA_CLI_BASE_PATH=/var/www/html app php -r "$PHP_BOOTSTRAP" "$@"
 fi
 
 printf '%s\n' 'Unable to run myxa: neither Docker nor PHP is available.' >&2
