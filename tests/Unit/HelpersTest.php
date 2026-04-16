@@ -18,6 +18,8 @@ final class HelpersTest extends TestCase
         self::assertSame($basePath, base_path());
         self::assertSame($basePath . '/app', app_path());
         self::assertSame($basePath . '/config/app.php', config_path('app.php'));
+        self::assertSame($basePath . '/database', database_path());
+        self::assertSame($basePath . '/database/migrations', database_path('migrations'));
         self::assertSame($basePath . '/public', public_path());
         self::assertSame($basePath . '/resources/views', resource_path('views'));
         self::assertSame($basePath . '/routes/web.php', route_path('web.php'));

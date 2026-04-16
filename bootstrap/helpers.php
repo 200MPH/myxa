@@ -43,6 +43,13 @@ if (!function_exists('resource_path')) {
     }
 }
 
+if (!function_exists('database_path')) {
+    function database_path(string $path = ''): string
+    {
+        return base_path('database' . ($path === '' ? '' : '/' . ltrim($path, '/')));
+    }
+}
+
 if (!function_exists('route_path')) {
     function route_path(string $path = ''): string
     {
