@@ -9,9 +9,13 @@ use App\Providers\CacheServiceProvider;
 use App\Providers\ConfigServiceProvider;
 use App\Providers\DatabaseServiceProvider;
 use App\Providers\FrameworkServiceProvider;
+use App\Providers\AuthServiceProvider;
 use App\Providers\RedisServiceProvider;
 use App\Providers\RoutesServiceProvider;
 use App\Support\Facades\Config;
+use Myxa\Auth\AuthManager;
+use Myxa\Auth\BearerTokenResolverInterface;
+use Myxa\Auth\SessionGuard;
 use Myxa\Application;
 use Myxa\Cache\CacheManager;
 use Myxa\Container\Exceptions\NotFoundException;
@@ -21,12 +25,14 @@ use Myxa\Http\Response;
 use Myxa\Redis\RedisManager;
 use Myxa\Routing\Router;
 use PHPUnit\Framework\Attributes\CoversClass;
+use ReflectionProperty;
 use Test\TestCase;
 
 #[CoversClass(CacheServiceProvider::class)]
 #[CoversClass(ConfigServiceProvider::class)]
 #[CoversClass(DatabaseServiceProvider::class)]
 #[CoversClass(FrameworkServiceProvider::class)]
+#[CoversClass(AuthServiceProvider::class)]
 #[CoversClass(RedisServiceProvider::class)]
 #[CoversClass(RoutesServiceProvider::class)]
 final class InfrastructureProvidersTest extends TestCase
@@ -263,5 +269,29 @@ PHP);
                 rmdir($cacheDirectory);
             }
         }
+    }
+
+    public function testAuthProviderRegistersManagerResolversAndCustomSessionCookie(): void
+    {
+        $app = new Application();
+        $app->instance(ConfigRepository::class, new ConfigRepository([
+            'auth' => [
+                'session' => [
+                    'cookie' => 'custom_session',
+                ],
+            ],
+        ]));
+
+        $app->register(AuthServiceProvider::class);
+        $app->boot();
+
+        $manager = $app->make(AuthManager::class);
+        $guard = $app->make(SessionGuard::class);
+        $cookieProperty = new ReflectionProperty(SessionGuard::class, 'cookieName');
+
+        self::assertInstanceOf(AuthManager::class, $manager);
+        self::assertSame($manager, $app->make('auth'));
+        self::assertInstanceOf(BearerTokenResolverInterface::class, $app->make(BearerTokenResolverInterface::class));
+        self::assertSame('custom_session', $cookieProperty->getValue($guard));
     }
 }
