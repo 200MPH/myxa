@@ -12,6 +12,7 @@ use Myxa\RateLimit\RateLimitServiceProvider as FrameworkRateLimitServiceProvider
 use Myxa\RateLimit\RateLimiterStoreInterface;
 use Myxa\Redis\RedisManager;
 use Myxa\Support\ServiceProvider;
+use RuntimeException;
 
 final class RateLimitServiceProvider extends ServiceProvider
 {
@@ -21,26 +22,31 @@ final class RateLimitServiceProvider extends ServiceProvider
             RateLimiterStoreInterface::class,
             static function (Application $app): RateLimiterStoreInterface {
                 $config = $app->make(ConfigRepository::class);
-                $defaultStore = (string) $config->get('rate_limit.default_store', 'file');
-                $storeConfiguration = $config->get(sprintf('rate_limit.stores.%s', $defaultStore), []);
+                $defaultStore = (string) $config->get('rate_limit.default_store');
+                $storeConfiguration = $config->get(sprintf('rate_limit.stores.%s', $defaultStore));
 
-                if (!is_array($storeConfiguration)) {
-                    $storeConfiguration = [];
+                if ($defaultStore === '') {
+                    throw new RuntimeException('Rate limit default_store must be configured.');
                 }
 
-                $driver = (string) ($storeConfiguration['driver'] ?? 'file');
-                $path = (string) ($storeConfiguration['path'] ?? storage_path('rate-limit'));
-                $connection = (string) ($storeConfiguration['connection'] ?? $config->get('services.redis.default', 'cache'));
-                $prefix = (string) ($storeConfiguration['prefix'] ?? 'rate-limit:');
+                if (!is_array($storeConfiguration)) {
+                    throw new RuntimeException(sprintf('Rate limit store [%s] is not configured.', $defaultStore));
+                }
+
+                $driver = (string) ($storeConfiguration['driver'] ?? '');
 
                 return match ($driver) {
-                    'file' => new FileRateLimiterStore($path),
+                    'file' => new FileRateLimiterStore((string) $storeConfiguration['path']),
                     'redis' => new RedisRateLimiterStore(
                         $app->make(RedisManager::class),
-                        $connection !== '' ? $connection : null,
-                        $prefix !== '' ? $prefix : 'rate-limit:',
+                        (string) $storeConfiguration['connection'],
+                        (string) $storeConfiguration['prefix'],
                     ),
-                    default => new FileRateLimiterStore(storage_path('rate-limit')),
+                    default => throw new RuntimeException(sprintf(
+                        'Unsupported rate limit store driver [%s] for store [%s].',
+                        $driver,
+                        $defaultStore,
+                    )),
                 };
             },
         );
