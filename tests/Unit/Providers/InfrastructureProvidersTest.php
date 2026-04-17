@@ -11,6 +11,7 @@ use App\Providers\DatabaseServiceProvider;
 use App\Providers\EventServiceProvider;
 use App\Providers\FrameworkServiceProvider;
 use App\Providers\AuthServiceProvider;
+use App\Providers\RateLimitServiceProvider;
 use App\Providers\RedisServiceProvider;
 use App\Providers\RoutesServiceProvider;
 use App\Providers\StorageServiceProvider;
@@ -25,7 +26,10 @@ use Myxa\Database\DatabaseManager;
 use Myxa\Events\EventBusInterface;
 use Myxa\Http\Request;
 use Myxa\Http\Response;
+use Myxa\RateLimit\RateLimiter;
 use Myxa\Redis\RedisManager;
+use Myxa\Redis\Connection\InMemoryRedisStore;
+use Myxa\Redis\Connection\RedisConnection;
 use Myxa\Routing\Router;
 use Myxa\Storage\StorageManager;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -38,6 +42,7 @@ use Test\TestCase;
 #[CoversClass(EventServiceProvider::class)]
 #[CoversClass(FrameworkServiceProvider::class)]
 #[CoversClass(AuthServiceProvider::class)]
+#[CoversClass(RateLimitServiceProvider::class)]
 #[CoversClass(RedisServiceProvider::class)]
 #[CoversClass(RoutesServiceProvider::class)]
 #[CoversClass(StorageServiceProvider::class)]
@@ -328,6 +333,73 @@ PHP);
             $this->removeDirectory(dirname($localRoot));
             $this->removeDirectory(dirname($publicRoot));
         }
+    }
+
+    public function testRateLimitProviderRegistersConfiguredFileStore(): void
+    {
+        $rateLimitPath = storage_path('framework/testing/rate-limit-provider-' . uniqid('', true));
+
+        $app = new Application();
+        $app->instance(ConfigRepository::class, new ConfigRepository([
+            'rate_limit' => [
+                'default_store' => 'file',
+                'stores' => [
+                    'file' => [
+                        'driver' => 'file',
+                        'path' => $rateLimitPath,
+                    ],
+                ],
+            ],
+        ]));
+
+        try {
+            $app->register(RateLimitServiceProvider::class);
+            $app->boot();
+
+            $limiter = $app->make(RateLimiter::class);
+            $result = $limiter->consume('provider:test', 3, 60);
+
+            self::assertSame(1, $result->attempts);
+            self::assertFileExists($rateLimitPath . '/' . sha1('provider:test') . '.json');
+            self::assertSame($limiter, $app->make('rate.limiter'));
+        } finally {
+            $this->removeDirectory($rateLimitPath);
+        }
+    }
+
+    public function testRateLimitProviderRegistersConfiguredRedisStore(): void
+    {
+        $app = new Application();
+        $app->instance(ConfigRepository::class, new ConfigRepository([
+            'services' => [
+                'redis' => [
+                    'default' => 'cache',
+                ],
+            ],
+            'rate_limit' => [
+                'default_store' => 'redis',
+                'stores' => [
+                    'redis' => [
+                        'driver' => 'redis',
+                        'connection' => 'cache',
+                        'prefix' => 'rl:',
+                    ],
+                ],
+            ],
+        ]));
+        $app->instance(RedisManager::class, new RedisManager(
+            'cache',
+            new RedisConnection(new InMemoryRedisStore()),
+        ));
+
+        $app->register(RateLimitServiceProvider::class);
+        $app->boot();
+
+        $limiter = $app->make(RateLimiter::class);
+        $result = $limiter->consume('provider:redis', 3, 60);
+
+        self::assertSame(1, $result->attempts);
+        self::assertSame($limiter, $app->make('rate.limiter'));
     }
 
     public function testAuthProviderRegistersManagerResolversAndCustomSessionCookie(): void
