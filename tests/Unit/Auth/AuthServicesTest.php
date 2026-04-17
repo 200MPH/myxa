@@ -516,6 +516,29 @@ final class AuthServicesTest extends TestCase
         self::assertNull($resolver->resolve('missing-user-session', new Request()));
     }
 
+    public function testSessionUserResolverReturnsNullWhenSessionCannotBeResolved(): void
+    {
+        $this->install->install(false);
+        $this->migrations->migrate($this->connection);
+
+        $sessionsPath = $this->rootPath . '/sessions-missing-session';
+        mkdir($sessionsPath, 0777, true);
+
+        $sessionManager = new SessionManager(
+            $this->makeAuthConfig([
+                'driver' => 'file',
+                'path' => $sessionsPath,
+            ]),
+            $this->users,
+            new FileSessionStore($sessionsPath),
+        );
+
+        $resolver = new SessionUserResolver($sessionManager, $this->users);
+
+        self::assertNull($resolver->resolve('missing-session', new Request()));
+        self::assertNull($resolver->resolve('   ', new Request()));
+    }
+
     private function makeInMemoryConnection(): PdoConnection
     {
         $pdo = new PDO('sqlite::memory:');
