@@ -9,6 +9,10 @@ Supported SQL engines in the framework today:
 - SQLite
 - SQL Server
 
+The framework also supports Mongo-style document models through `MongoModel`.
+
+If you are looking for MongoDB-oriented usage rather than SQL tables, jump to the [MongoModel](#mongomodel) section below.
+
 ## Database Configuration
 
 Primary config lives in:
