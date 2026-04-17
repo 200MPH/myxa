@@ -114,11 +114,16 @@ DB_FORWARD_PORT=3306
 
 These map into `config/database.php`.
 
-The current skeleton ships one named connection:
+The current skeleton now includes named connection templates for:
 
 - `mysql`
+- `pgsql`
+- `sqlite`
+- `sqlsrv`
 
-You can add more connections directly in `config/database.php`.
+`mysql` remains the default because the local Docker stack already boots MySQL out of the box.
+
+If you prefer another engine, switch `DB_CONNECTION` and fill in the matching env values.
 
 ## Redis
 

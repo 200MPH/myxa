@@ -2,6 +2,13 @@
 
 The project already wires the framework database layer through `DatabaseServiceProvider`, model generation, and migration commands.
 
+Supported SQL engines in the framework today:
+
+- MySQL
+- PostgreSQL
+- SQLite
+- SQL Server
+
 ## Database Configuration
 
 Primary config lives in:
@@ -25,6 +32,8 @@ DB_DATABASE=myxa
 DB_USERNAME=myxa
 DB_PASSWORD=secret
 ```
+
+This skeleton starts with a MySQL connection, but the underlying SQL layer is not MySQL-only. If you need them, you can add PostgreSQL, SQLite, or SQL Server connections in `config/database.php` as well.
 
 ## Raw Queries with `DB`
 
