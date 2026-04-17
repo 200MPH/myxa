@@ -129,6 +129,48 @@ PHP);
         self::assertStringContainsString('\\App\\Listeners\\ProvisionWorkspaceListener::class,', $providerSource);
     }
 
+    public function testHelperMethodsNormalizeListenerNamesEventsNamespacesAndPaths(): void
+    {
+        $scaffolder = new ListenerScaffolder($this->listenersPath, $this->providerPath);
+
+        self::assertSame('Auth\\TrackLogin', $scaffolder->normalizeName('/Auth/TrackLogin/'));
+        self::assertSame('App\\Listeners\\Auth', $scaffolder->normalizeNamespace('Auth\\TrackLogin'));
+        self::assertSame('App\\Events\\UserRegistered', $scaffolder->normalizeEventClass('UserRegistered'));
+        self::assertSame('App\\Events\\Auth\\UserLoggedIn', $scaffolder->normalizeEventClass('Auth/UserLoggedIn'));
+        self::assertSame('Myxa\\Events\\EventInterface', $scaffolder->normalizeEventClass('Myxa\\Events\\EventInterface'));
+        self::assertNull($scaffolder->normalizeEventClass('////'));
+        self::assertSame(
+            $this->listenersPath . '/Auth/TrackLoginListener.php',
+            $scaffolder->listenerPath('App\\Listeners\\Auth', 'TrackLoginListener'),
+        );
+    }
+
+    public function testHelperMethodsRejectInvalidListenerNamesAndNamespaces(): void
+    {
+        $scaffolder = new ListenerScaffolder($this->listenersPath, $this->providerPath);
+
+        try {
+            $scaffolder->normalizeName('////');
+            self::fail('Expected blank listener names to fail.');
+        } catch (\RuntimeException $exception) {
+            self::assertStringContainsString('could not be resolved', $exception->getMessage());
+        }
+
+        try {
+            $scaffolder->normalizeNamespace('App\\Models\\User');
+            self::fail('Expected invalid listener namespace to fail.');
+        } catch (\RuntimeException $exception) {
+            self::assertStringContainsString('must live under App\\Listeners', $exception->getMessage());
+        }
+
+        try {
+            $scaffolder->listenerPath('App\\Models', 'UserListener');
+            self::fail('Expected invalid listener path namespace to fail.');
+        } catch (\RuntimeException $exception) {
+            self::assertStringContainsString('must live under App\\Listeners', $exception->getMessage());
+        }
+    }
+
     private function removeDirectory(string $path): void
     {
         if (!is_dir($path)) {

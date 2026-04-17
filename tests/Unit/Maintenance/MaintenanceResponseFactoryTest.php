@@ -46,4 +46,21 @@ final class MaintenanceResponseFactoryTest extends TestCase
             $response->content(),
         );
     }
+
+    public function testFactoryFallsBackToPlainTextWhenHtmlTemplateCannotBeRendered(): void
+    {
+        $factory = new MaintenanceResponseFactory('/definitely-missing-myxa-maintenance-view');
+
+        $response = $factory->forRequest(new Request(server: [
+            'REQUEST_METHOD' => 'GET',
+            'REQUEST_URI' => '/',
+        ]), [
+            'enabled_at' => 'not-a-date',
+        ]);
+
+        self::assertSame(503, $response->statusCode());
+        self::assertSame('text/plain; charset=UTF-8', $response->header('Content-Type'));
+        self::assertSame('Service Unavailable', $response->content());
+        self::assertSame('60', $response->header('Retry-After'));
+    }
 }

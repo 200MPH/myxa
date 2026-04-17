@@ -66,4 +66,19 @@ ENV);
 
         self::assertFalse(getenv('UNSET_VALUE'));
     }
+
+    public function testLoaderIgnoresEntriesWithBlankVariableNames(): void
+    {
+        $this->unsetEnvironmentValue('VALID_VALUE');
+
+        file_put_contents($this->environmentFile, <<<'ENV'
+=missing-name
+VALID_VALUE=present
+ENV);
+
+        Environment::load($this->environmentFile);
+
+        self::assertFalse(getenv(''));
+        self::assertSame('present', getenv('VALID_VALUE'));
+    }
 }

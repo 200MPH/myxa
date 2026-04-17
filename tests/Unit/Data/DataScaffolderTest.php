@@ -73,6 +73,55 @@ final class DataScaffolderTest extends TestCase
         self::assertStringContainsString('final readonly class ProfileData implements JsonSerializable', $source);
     }
 
+    public function testHelperMethodsNormalizeDataNamesNamespacesAndPaths(): void
+    {
+        $scaffolder = new DataScaffolder($this->dataPath);
+
+        self::assertSame('Users\\Profile', $scaffolder->normalizeName('/Users/Profile/'));
+        self::assertSame('App\\Data\\Users', $scaffolder->normalizeNamespace('Users\\Profile'));
+        self::assertSame(
+            $this->dataPath . '/Users/ProfileData.php',
+            $scaffolder->dataClassPath('App\\Data\\Users', 'ProfileData'),
+        );
+    }
+
+    public function testHelperMethodsRejectInvalidDataNamesAndNamespaces(): void
+    {
+        $scaffolder = new DataScaffolder($this->dataPath);
+
+        try {
+            $scaffolder->normalizeName('////');
+            self::fail('Expected blank data names to fail.');
+        } catch (\RuntimeException $exception) {
+            self::assertStringContainsString('could not be resolved', $exception->getMessage());
+        }
+
+        try {
+            $scaffolder->normalizeNamespace('App\\Models\\User');
+            self::fail('Expected invalid data namespace to fail.');
+        } catch (\RuntimeException $exception) {
+            self::assertStringContainsString('must live under App\\Data', $exception->getMessage());
+        }
+
+        try {
+            $scaffolder->dataClassPath('App\\Models', 'UserData');
+            self::fail('Expected invalid data path namespace to fail.');
+        } catch (\RuntimeException $exception) {
+            self::assertStringContainsString('must live under App\\Data', $exception->getMessage());
+        }
+    }
+
+    public function testMakeRejectsDuplicateDataFiles(): void
+    {
+        $scaffolder = new DataScaffolder($this->dataPath);
+        $scaffolder->make('User');
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('already exists');
+
+        $scaffolder->make('User');
+    }
+
     private function removeDirectory(string $path): void
     {
         if (!is_dir($path)) {

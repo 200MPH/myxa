@@ -98,6 +98,49 @@ PHP);
         ], $discovery->discover());
     }
 
+    public function testDiscoverReturnsEmptyArrayWhenCommandsDirectoryIsMissing(): void
+    {
+        $discovery = new CommandDiscovery($this->commandsPath . '/Missing');
+
+        self::assertSame([], $discovery->discover());
+    }
+
+    public function testDiscoverThrowsWhenCommandClassDoesNotExist(): void
+    {
+        file_put_contents($this->commandsPath . '/GhostCommand.php', <<<'PHP'
+<?php
+
+declare(strict_types=1);
+PHP);
+
+        $discovery = new CommandDiscovery($this->commandsPath);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('was not found for file');
+        $discovery->discover();
+    }
+
+    public function testDiscoverThrowsWhenCommandClassDoesNotImplementInterface(): void
+    {
+        file_put_contents($this->commandsPath . '/BrokenCommand.php', <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+namespace App\Console\Commands;
+
+final class BrokenCommand
+{
+}
+PHP);
+
+        $discovery = new CommandDiscovery($this->commandsPath);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('must implement');
+        $discovery->discover();
+    }
+
     private function removeDirectory(string $path): void
     {
         if (!is_dir($path)) {

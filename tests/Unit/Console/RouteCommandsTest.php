@@ -152,6 +152,109 @@ final class RouteCommandsTest extends TestCase
         self::assertFileDoesNotExist($this->maintenancePath);
     }
 
+    public function testMaintenanceOnCommandSupportsWaitWhenNoActiveCommandsRemain(): void
+    {
+        $app = ApplicationFactory::create(base_path());
+        $command = $app->make(MaintenanceOnCommand::class);
+
+        $stream = fopen('php://temp', 'w+b');
+        self::assertIsResource($stream);
+
+        $exitCode = $command->run(
+            new ConsoleInput('maintenance:on', [], ['wait' => true]),
+            new ConsoleOutput($stream, ansi: false),
+        );
+
+        rewind($stream);
+        $output = (string) stream_get_contents($stream);
+        fclose($stream);
+
+        self::assertSame(0, $exitCode);
+        self::assertStringContainsString('Maintenance mode enabled', $output);
+        self::assertStringContainsString('No running console commands are still active.', $output);
+    }
+
+    public function testMaintenanceOnCommandReportsAlreadyEnabledAndCanTimeOutWaiting(): void
+    {
+        $app = ApplicationFactory::create(base_path());
+        $maintenance = $app->make(MaintenanceMode::class);
+        $maintenance->enable('phpunit');
+        $maintenance->beginConsoleActivity('queue:work');
+
+        $command = $app->make(MaintenanceOnCommand::class);
+        $stream = fopen('php://temp', 'w+b');
+        self::assertIsResource($stream);
+
+        $exitCode = $command->run(
+            new ConsoleInput('maintenance:on', [], ['wait' => true, 'timeout' => 1]),
+            new ConsoleOutput($stream, ansi: false),
+        );
+
+        rewind($stream);
+        $output = (string) stream_get_contents($stream);
+        fclose($stream);
+
+        self::assertSame(1, $exitCode);
+        self::assertStringContainsString('Maintenance mode is already enabled.', $output);
+        self::assertStringContainsString('Timed out while waiting for maintenance drain.', $output);
+    }
+
+    public function testMaintenanceOffCommandReportsAlreadyDisabled(): void
+    {
+        $app = ApplicationFactory::create(base_path());
+
+        [$exitCode, $output] = $this->runCommand($app->make(MaintenanceOffCommand::class), 'maintenance:off');
+
+        self::assertSame(0, $exitCode);
+        self::assertStringContainsString('Maintenance mode is already disabled.', $output);
+    }
+
+    public function testRouteAndMaintenanceCommandsExposeCliMetadata(): void
+    {
+        $app = ApplicationFactory::create(base_path());
+
+        $routeCache = $app->make(RouteCacheCommand::class);
+        $routeClear = $app->make(RouteClearCommand::class);
+        $maintenanceOn = $app->make(MaintenanceOnCommand::class);
+        $maintenanceOff = $app->make(MaintenanceOffCommand::class);
+
+        self::assertSame('route:cache', $routeCache->name());
+        self::assertSame('Compile application routes into a cached PHP manifest.', $routeCache->description());
+        self::assertSame('route:clear', $routeClear->name());
+        self::assertSame('Delete the compiled route cache manifest.', $routeClear->description());
+        self::assertSame('maintenance:on', $maintenanceOn->name());
+        self::assertSame(
+            'Enable maintenance mode and optionally wait for running CLI work to finish.',
+            $maintenanceOn->description(),
+        );
+        self::assertCount(2, $maintenanceOn->options());
+        self::assertSame('wait', $maintenanceOn->options()[0]->name());
+        self::assertFalse($maintenanceOn->options()[0]->acceptsValue());
+        self::assertSame('timeout', $maintenanceOn->options()[1]->name());
+        self::assertTrue($maintenanceOn->options()[1]->acceptsValue());
+        self::assertSame(300, $maintenanceOn->options()[1]->default());
+        self::assertSame('maintenance:off', $maintenanceOff->name());
+        self::assertSame('Disable maintenance mode.', $maintenanceOff->description());
+    }
+
+    public function testMaintenanceStatusCommandDisplaysTrackedCommandsTable(): void
+    {
+        $app = ApplicationFactory::create(base_path());
+        $maintenance = $app->make(MaintenanceMode::class);
+        $maintenance->enable('phpunit');
+        $maintenance->beginConsoleActivity('queue:work');
+
+        [$exitCode, $output] = $this->runCommand(
+            $app->make(MaintenanceStatusCommand::class),
+            'maintenance:status',
+        );
+
+        self::assertSame(0, $exitCode);
+        self::assertStringContainsString('enabled', $output);
+        self::assertStringContainsString('queue:work', $output);
+        self::assertStringContainsString('Started At', $output);
+    }
+
     public function testConsoleKernelBlocksNewCommandsWhileMaintenanceModeIsEnabled(): void
     {
         $app = ApplicationFactory::create(base_path());
@@ -166,6 +269,30 @@ final class RouteCommandsTest extends TestCase
         self::assertSame(0, $maintenance->activeConsoleCommandCount());
 
         $maintenance->disable();
+    }
+
+    public function testConsoleKernelHelperMethodsParseContextAndMatchWildcardAllowList(): void
+    {
+        $app = ApplicationFactory::create(base_path());
+        $kernel = $app->make(Kernel::class);
+
+        $parseContext = new \ReflectionMethod(Kernel::class, 'parseContext');
+        $parseContext->setAccessible(true);
+        $matchesPattern = new \ReflectionMethod(Kernel::class, 'commandMatchesPattern');
+        $matchesPattern->setAccessible(true);
+        $allowList = new \ReflectionMethod(Kernel::class, 'matchesMaintenanceAllowList');
+        $allowList->setAccessible(true);
+
+        $context = $parseContext->invoke($kernel, ['myxa', 'cache:clear', '--quiet', '--help']);
+        $app->make(ConfigRepository::class)->set('maintenance.allowed_commands', ['cache:*']);
+
+        self::assertSame('cache:clear', $context['command']);
+        self::assertTrue($context['quiet']);
+        self::assertTrue($context['help']);
+        self::assertFalse($context['version']);
+        self::assertTrue($matchesPattern->invoke($kernel, 'cache:forget', 'cache:*'));
+        self::assertFalse($matchesPattern->invoke($kernel, 'route:clear', 'cache:*'));
+        self::assertTrue($allowList->invoke($kernel, 'cache:clear'));
     }
 
     public function testConsoleKernelAllowsConfiguredMaintenanceExceptionCommands(): void
@@ -205,6 +332,60 @@ final class RouteCommandsTest extends TestCase
         if (is_file($cachePath)) {
             unlink($cachePath);
         }
+    }
+
+    public function testConsoleKernelBypassesMaintenanceForHelpAndVersionFlags(): void
+    {
+        $app = ApplicationFactory::create(base_path());
+        $maintenance = $app->make(MaintenanceMode::class);
+        $maintenance->enable('phpunit');
+
+        $kernel = $app->make(Kernel::class);
+
+        self::assertSame(0, $kernel->handle(['myxa', 'route:cache', '--help']));
+        self::assertSame(0, $kernel->handle(['myxa', '--version']));
+
+        $maintenance->disable();
+    }
+
+    public function testRouteCacheCommandWarnsWhenCachingIsDisabled(): void
+    {
+        $this->setEnvironmentValue('ROUTE_CACHE', 'false');
+
+        $cachePath = storage_path('cache/framework/routes.php');
+        $cacheDirectory = dirname($cachePath);
+        if (!is_dir($cacheDirectory)) {
+            mkdir($cacheDirectory, 0777, true);
+        }
+
+        $app = ApplicationFactory::create(base_path());
+        $command = $app->make(RouteCacheCommand::class);
+
+        [$exitCode, $output] = $this->runCommand($command, 'route:cache');
+
+        try {
+            self::assertSame(0, $exitCode);
+            self::assertStringContainsString('Route caching is currently disabled by configuration.', $output);
+            self::assertStringContainsString('Route cache generated at', $output);
+        } finally {
+            if (is_file($cachePath)) {
+                unlink($cachePath);
+            }
+
+            if (is_dir($cacheDirectory) && (glob($cacheDirectory . '/*') ?: []) === []) {
+                rmdir($cacheDirectory);
+            }
+        }
+    }
+
+    public function testRouteClearCommandReportsAlreadyClearWhenNoManifestExists(): void
+    {
+        $app = ApplicationFactory::create(base_path());
+
+        [$exitCode, $output] = $this->runCommand($app->make(RouteClearCommand::class), 'route:clear');
+
+        self::assertSame(0, $exitCode);
+        self::assertStringContainsString('Route cache is already clear.', $output);
     }
 
     /**

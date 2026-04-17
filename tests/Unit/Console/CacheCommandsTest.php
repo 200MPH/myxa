@@ -134,6 +134,56 @@ final class CacheCommandsTest extends TestCase
         self::assertStringContainsString('Cache key [missing:key] was already absent from store [local].', $output);
     }
 
+    public function testCacheCommandsExposeExpectedCliMetadata(): void
+    {
+        $manager = new CacheManager('local', new FileCacheStore($this->rootPath . '/cache/default'));
+        $clear = new CacheClearCommand($manager);
+        $forget = new CacheForgetCommand($manager);
+
+        self::assertSame('cache:clear', $clear->name());
+        self::assertSame('Clear the configured application cache store.', $clear->description());
+        self::assertCount(1, $clear->options());
+        self::assertSame('store', $clear->options()[0]->name());
+        self::assertTrue($clear->options()[0]->acceptsValue());
+
+        self::assertSame('cache:forget', $forget->name());
+        self::assertSame('Remove a single key from the configured application cache store.', $forget->description());
+        self::assertCount(1, $forget->parameters());
+        self::assertSame('key', $forget->parameters()[0]->name());
+        self::assertCount(1, $forget->options());
+        self::assertSame('store', $forget->options()[0]->name());
+        self::assertTrue($forget->options()[0]->acceptsValue());
+    }
+
+    public function testCacheClearCommandReturnsErrorWhenStoreIsUnknown(): void
+    {
+        $manager = new CacheManager('local', new FileCacheStore($this->rootPath . '/cache/default'));
+
+        $command = new CacheClearCommand($manager);
+
+        [$exitCode, $output] = $this->runCommand($command, 'cache:clear', options: ['store' => 'missing']);
+
+        self::assertSame(1, $exitCode);
+        self::assertStringContainsString('Unable to clear cache store [missing]', $output);
+    }
+
+    public function testCacheForgetCommandReturnsErrorWhenStoreIsUnknown(): void
+    {
+        $manager = new CacheManager('local', new FileCacheStore($this->rootPath . '/cache/default'));
+
+        $command = new CacheForgetCommand($manager);
+
+        [$exitCode, $output] = $this->runCommand(
+            $command,
+            'cache:forget',
+            parameters: ['key' => 'users:123'],
+            options: ['store' => 'missing'],
+        );
+
+        self::assertSame(1, $exitCode);
+        self::assertStringContainsString('Unable to forget cache key [users:123] from store [missing]', $output);
+    }
+
     /**
      * @param array<string, string> $parameters
      * @param array<string, string> $options

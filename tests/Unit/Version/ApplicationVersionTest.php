@@ -60,6 +60,35 @@ final class ApplicationVersionTest extends TestCase
         self::assertFileExists($this->manifestPath);
     }
 
+    public function testVersionUsesEnvironmentFallbackWhenManifestHasNoVersion(): void
+    {
+        $this->setEnvironmentValue('APP_VERSION', 'v-env-1.0.0');
+        file_put_contents($this->manifestPath, json_encode(['source' => ''], JSON_THROW_ON_ERROR));
+
+        $version = $this->makeVersionService();
+
+        self::assertSame('v-env-1.0.0', $version->current());
+        self::assertSame('env', $version->source());
+    }
+
+    public function testVersionIgnoresInvalidManifestJson(): void
+    {
+        file_put_contents($this->manifestPath, '{invalid json');
+
+        $version = $this->makeVersionService();
+
+        self::assertSame([], $version->manifest());
+        self::assertSame('dev', $version->current());
+        self::assertSame('fallback', $version->source());
+    }
+
+    public function testManifestPathFallsBackToProjectVersionFileWhenConfigMissing(): void
+    {
+        $version = new ApplicationVersion(new ConfigRepository([]));
+
+        self::assertStringEndsWith('version.json', $version->manifestPath());
+    }
+
     private function makeVersionService(): ApplicationVersion
     {
         return new ApplicationVersion(new ConfigRepository([

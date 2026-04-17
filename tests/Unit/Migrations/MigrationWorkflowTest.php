@@ -36,6 +36,8 @@ final class MigrationWorkflowTest extends TestCase
 
     private DatabaseManager $database;
 
+    private MigrationLoader $loader;
+
     private MigrationManager $manager;
 
     private MigrationScaffolder $migrationScaffolder;
@@ -62,6 +64,7 @@ final class MigrationWorkflowTest extends TestCase
         );
 
         $loader = new MigrationLoader($this->makeConfig());
+        $this->loader = $loader;
         $this->migrationScaffolder = new MigrationScaffolder($this->makeConfig());
         $this->database = new DatabaseManager($this->connection);
         $this->config = $this->makeConfig();
@@ -104,6 +107,50 @@ final class MigrationWorkflowTest extends TestCase
         self::assertSame(['migrations'], $this->database->schema($this->connection)->reverseEngineer()->tables());
     }
 
+    public function testMigrationLoaderDiscoversLoadsAndResolvesMigrationPaths(): void
+    {
+        $alphaPath = $this->migrationScaffolder->make('create_alpha_table', 'alpha');
+        $zetaPath = $this->migrationScaffolder->make('create_zeta_table', 'zeta');
+
+        $paths = $this->loader->discoverPaths();
+        $loaded = $this->loader->loadAll();
+
+        self::assertSame([$alphaPath, $zetaPath], $paths);
+        self::assertSame(
+            [basename($alphaPath, '.php'), basename($zetaPath, '.php')],
+            array_map(static fn ($migration): string => $migration->name, $loaded),
+        );
+        self::assertSame($alphaPath, $this->loader->resolvePath(basename($alphaPath)));
+        self::assertSame($zetaPath, $this->loader->resolvePath($zetaPath));
+    }
+
+    public function testMigrationLoaderRejectsMissingMigrationFiles(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('could not be resolved');
+
+        $this->loader->resolvePath('missing_migration.php');
+    }
+
+    public function testMigrationLoaderRejectsFilesWithoutConcreteMigrationClasses(): void
+    {
+        $path = $this->rootPath . '/migrations/' . date('Y_m_d_His') . '_invalid_migration.php';
+        file_put_contents($path, <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+final class InvalidMigrationFile
+{
+}
+PHP);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('did not declare a concrete migration class');
+
+        $this->loader->loadPath($path);
+    }
+
     public function testSnapshotDiffAndReverseEngineeringWorkTogether(): void
     {
         $schema = $this->database->schema($this->connection);
@@ -129,6 +176,100 @@ final class MigrationWorkflowTest extends TestCase
 
         self::assertFileExists($reversePath);
         self::assertStringContainsString('CreateUsersTable', (string) file_get_contents($reversePath));
+    }
+
+    public function testMigrationManagerStatusShowsRanAndPendingMigrations(): void
+    {
+        $this->migrationScaffolder->make('create_applied_table', 'applied_items');
+        $this->manager->migrate($this->connection);
+        $this->migrationScaffolder->make('create_pending_table', 'pending_items');
+
+        $status = $this->manager->status($this->connection);
+
+        self::assertCount(2, $status);
+        self::assertSame(basename($this->loader->discoverPaths()[0], '.php'), $status[0]['migration']);
+        self::assertSame('ran', $status[0]['status']);
+        self::assertSame(1, $status[0]['batch']);
+        self::assertSame(basename($this->loader->discoverPaths()[1], '.php'), $status[1]['migration']);
+        self::assertSame('pending', $status[1]['status']);
+        self::assertNull($status[1]['batch']);
+    }
+
+    public function testMigrationManagerCanWriteDiffMigrationFile(): void
+    {
+        $schema = $this->database->schema($this->connection);
+
+        $schema->create('users', function (Blueprint $table): void {
+            $table->id();
+            $table->string('email')->unique();
+        });
+
+        $this->manager->snapshot($this->connection);
+
+        $schema->table('users', function (Blueprint $table): void {
+            $table->string('nickname')->nullable();
+        });
+
+        $path = $this->manager->writeDiffMigration('users', $this->connection, null, 'AlterUsersTableAddNickname');
+
+        self::assertFileExists($path);
+        self::assertStringContainsString('AlterUsersTableAddNickname', (string) file_get_contents($path));
+        self::assertStringContainsString('alter_users_table', basename($path));
+    }
+
+    public function testMigrationManagerDiffFailsWhenSnapshotIsMissing(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Run migrate:snapshot first');
+
+        $this->manager->diff('users', $this->connection);
+    }
+
+    public function testMigrationManagerRollbackFailsWhenAppliedMigrationFileIsMissing(): void
+    {
+        $path = $this->migrationScaffolder->make('create_removed_table', 'removed_items');
+        $this->manager->migrate($this->connection);
+        unlink($path);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('could not be found');
+
+        $this->manager->rollback(1, $this->connection);
+    }
+
+    public function testMigrationScaffolderCanGenerateAlterAndGenericMigrationStubs(): void
+    {
+        $alterPath = $this->migrationScaffolder->make(
+            'alter_users_table',
+            createTable: null,
+            table: 'users',
+            className: 'AlterUsersTable',
+            connection: 'analytics',
+        );
+        $genericPath = $this->migrationScaffolder->make(
+            'sync_legacy_data',
+            createTable: null,
+            table: null,
+            className: 'SyncLegacyData',
+        );
+
+        $alterSource = (string) file_get_contents($alterPath);
+        $genericSource = (string) file_get_contents($genericPath);
+
+        self::assertStringContainsString("return 'analytics';", $alterSource);
+        self::assertStringContainsString("\$schema->table('users'", $alterSource);
+        self::assertStringContainsString('// TODO: Reverse the table changes.', $alterSource);
+        self::assertStringContainsString('final class SyncLegacyData extends Migration', $genericSource);
+        self::assertStringContainsString('// TODO: Define the forward migration.', $genericSource);
+        self::assertStringContainsString('// TODO: Define the rollback migration.', $genericSource);
+    }
+
+    public function testMigrationScaffolderRejectsBlankNames(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('could not be normalized');
+
+        $this->migrationScaffolder->make('   ');
     }
 
     public function testModelScaffolderCanGenerateModelFromLiveTable(): void
@@ -164,6 +305,65 @@ final class MigrationWorkflowTest extends TestCase
         self::assertStringContainsString('namespace App\\Models\\Admin;', $source);
         self::assertStringContainsString('final class AuditLog extends Model', $source);
         self::assertStringContainsString("protected string \$table = 'audit_logs';", $source);
+    }
+
+    public function testModelScaffolderCanGenerateModelFromMigrationFile(): void
+    {
+        $migrationPath = $this->migrationScaffolder->make('create_comments_table', 'comments');
+        $path = $this->modelScaffolder->make(
+            'App\\Models\\Comment',
+            fromMigration: basename($migrationPath),
+            connection: $this->connection,
+        );
+
+        $source = (string) file_get_contents($path);
+
+        self::assertFileExists($path);
+        self::assertStringContainsString('namespace App\\Models;', $source);
+        self::assertStringContainsString('final class Comment extends Model', $source);
+        self::assertStringContainsString("protected string \$table = 'comments';", $source);
+    }
+
+    public function testModelScaffolderHelpersAndGuardsRejectInvalidInputs(): void
+    {
+        self::assertSame('Admin\\AuditLog', $this->modelScaffolder->normalizeName('/Admin/AuditLog/'));
+        self::assertSame('App\\Models\\Admin', $this->modelScaffolder->normalizeNamespace('Admin\\AuditLog'));
+
+        try {
+            $this->modelScaffolder->normalizeName('////');
+            self::fail('Expected blank model names to fail.');
+        } catch (\RuntimeException $exception) {
+            self::assertStringContainsString('could not be resolved', $exception->getMessage());
+        }
+
+        try {
+            $this->modelScaffolder->normalizeNamespace('App\\Support\\Thing');
+            self::fail('Expected invalid model namespace to fail.');
+        } catch (\RuntimeException $exception) {
+            self::assertStringContainsString('must live under App\\Models', $exception->getMessage());
+        }
+
+        try {
+            $this->modelScaffolder->make('AuditLog', fromTable: 'audit_logs', fromMigration: 'example.php');
+            self::fail('Expected conflicting model sources to fail.');
+        } catch (\RuntimeException $exception) {
+            self::assertStringContainsString('Choose only one model source', $exception->getMessage());
+        }
+    }
+
+    public function testModelScaffolderUsesExplicitTableNamesAndRejectsDuplicateFiles(): void
+    {
+        $path = $this->modelScaffolder->make('App\\Models\\Invoice', table: 'billing_invoices');
+        $source = (string) file_get_contents($path);
+
+        self::assertStringContainsString("protected string \$table = 'billing_invoices';", $source);
+
+        try {
+            $this->modelScaffolder->make('App\\Models\\Invoice', table: 'billing_invoices');
+            self::fail('Expected duplicate model file generation to fail.');
+        } catch (\RuntimeException $exception) {
+            self::assertStringContainsString('already exists', $exception->getMessage());
+        }
     }
 
     private function makeConfig(): MigrationConfig

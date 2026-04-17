@@ -73,6 +73,44 @@ final class CommandScaffolderTest extends TestCase
         self::assertStringContainsString('final class SyncUsersCommand extends Command', $source);
     }
 
+    public function testHelperMethodsNormalizeCommandNamesNamespacesAndPaths(): void
+    {
+        $scaffolder = new CommandScaffolder($this->commandsPath);
+
+        self::assertSame('Admin\\SyncUsers', $scaffolder->normalizeName('/Admin/SyncUsers/'));
+        self::assertSame('App\\Console\\Commands\\Admin', $scaffolder->normalizeNamespace('Admin\\SyncUsers'));
+        self::assertSame(
+            $this->commandsPath . '/Admin/SyncUsersCommand.php',
+            $scaffolder->commandPath('App\\Console\\Commands\\Admin', 'SyncUsersCommand'),
+        );
+    }
+
+    public function testHelperMethodsRejectInvalidCommandNamesAndNamespaces(): void
+    {
+        $scaffolder = new CommandScaffolder($this->commandsPath);
+
+        try {
+            $scaffolder->normalizeName('////');
+            self::fail('Expected blank command names to fail.');
+        } catch (\RuntimeException $exception) {
+            self::assertStringContainsString('could not be resolved', $exception->getMessage());
+        }
+
+        try {
+            $scaffolder->normalizeNamespace('App\\Models\\User');
+            self::fail('Expected invalid command namespace to fail.');
+        } catch (\RuntimeException $exception) {
+            self::assertStringContainsString('must live under App\\Console\\Commands', $exception->getMessage());
+        }
+
+        try {
+            $scaffolder->commandPath('App\\Models', 'UserCommand');
+            self::fail('Expected invalid command path namespace to fail.');
+        } catch (\RuntimeException $exception) {
+            self::assertStringContainsString('must live under App\\Console\\Commands', $exception->getMessage());
+        }
+    }
+
     private function removeDirectory(string $path): void
     {
         if (!is_dir($path)) {

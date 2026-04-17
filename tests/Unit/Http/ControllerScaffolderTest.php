@@ -88,6 +88,44 @@ final class ControllerScaffolderTest extends TestCase
         self::assertStringContainsString('final class TestPalaController', $source);
     }
 
+    public function testHelperMethodsNormalizeControllerNamesNamespacesAndPaths(): void
+    {
+        $scaffolder = new ControllerScaffolder($this->controllersPath);
+
+        self::assertSame('Admin\\Users', $scaffolder->normalizeName('/Admin/Users/'));
+        self::assertSame('App\\Http\\Controllers\\Admin', $scaffolder->normalizeNamespace('Admin\\Users'));
+        self::assertSame(
+            $this->controllersPath . '/Admin/UsersController.php',
+            $scaffolder->controllerPath('App\\Http\\Controllers\\Admin', 'UsersController'),
+        );
+    }
+
+    public function testHelperMethodsRejectInvalidControllerInputs(): void
+    {
+        $scaffolder = new ControllerScaffolder($this->controllersPath);
+
+        try {
+            $scaffolder->make('Dashboard', invokable: true, resource: true);
+            self::fail('Expected conflicting controller styles to fail.');
+        } catch (\RuntimeException $exception) {
+            self::assertStringContainsString('Choose either an invokable controller or a resource controller', $exception->getMessage());
+        }
+
+        try {
+            $scaffolder->normalizeName('////');
+            self::fail('Expected blank controller names to fail.');
+        } catch (\RuntimeException $exception) {
+            self::assertStringContainsString('could not be resolved', $exception->getMessage());
+        }
+
+        try {
+            $scaffolder->normalizeNamespace('App\\Models\\User');
+            self::fail('Expected invalid controller namespace to fail.');
+        } catch (\RuntimeException $exception) {
+            self::assertStringContainsString('must live under App\\Http\\Controllers', $exception->getMessage());
+        }
+    }
+
     private function removeDirectory(string $path): void
     {
         if (!is_dir($path)) {

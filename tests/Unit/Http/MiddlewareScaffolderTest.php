@@ -72,6 +72,44 @@ final class MiddlewareScaffolderTest extends TestCase
         self::assertStringContainsString('final class EnsureTokenScopeMiddleware implements MiddlewareInterface', $source);
     }
 
+    public function testHelperMethodsNormalizeMiddlewareNamesNamespacesAndPaths(): void
+    {
+        $scaffolder = new MiddlewareScaffolder($this->middlewarePath);
+
+        self::assertSame('Api\\EnsureTokenScope', $scaffolder->normalizeName('/Api/EnsureTokenScope/'));
+        self::assertSame('App\\Http\\Middleware\\Api', $scaffolder->normalizeNamespace('Api\\EnsureTokenScope'));
+        self::assertSame(
+            $this->middlewarePath . '/Api/EnsureTokenScopeMiddleware.php',
+            $scaffolder->middlewareClassPath('App\\Http\\Middleware\\Api', 'EnsureTokenScopeMiddleware'),
+        );
+    }
+
+    public function testHelperMethodsRejectInvalidMiddlewareInputs(): void
+    {
+        $scaffolder = new MiddlewareScaffolder($this->middlewarePath);
+
+        try {
+            $scaffolder->normalizeName('////');
+            self::fail('Expected blank middleware names to fail.');
+        } catch (\RuntimeException $exception) {
+            self::assertStringContainsString('could not be resolved', $exception->getMessage());
+        }
+
+        try {
+            $scaffolder->normalizeNamespace('App\\Models\\User');
+            self::fail('Expected invalid middleware namespace to fail.');
+        } catch (\RuntimeException $exception) {
+            self::assertStringContainsString('must live under App\\Http\\Middleware', $exception->getMessage());
+        }
+
+        try {
+            $scaffolder->middlewareClassPath('App\\Models', 'UserMiddleware');
+            self::fail('Expected invalid middleware path namespace to fail.');
+        } catch (\RuntimeException $exception) {
+            self::assertStringContainsString('must live under App\\Http\\Middleware', $exception->getMessage());
+        }
+    }
+
     private function removeDirectory(string $path): void
     {
         if (!is_dir($path)) {

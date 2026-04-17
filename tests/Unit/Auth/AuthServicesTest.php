@@ -148,6 +148,87 @@ final class AuthServicesTest extends TestCase
         ], $second['skipped']);
     }
 
+    public function testAuthConfigExposesSessionAndTokenSettings(): void
+    {
+        $config = new AuthConfig(new ConfigRepository([
+            'auth' => [
+                'session' => [
+                    'driver' => 'redis',
+                    'cookie' => 'custom_session',
+                    'lifetime' => 900,
+                    'http_only' => false,
+                    'same_site' => 'Strict',
+                    'secure' => true,
+                    'length' => 96,
+                    'path' => '/tmp/myxa-sessions',
+                    'redis' => [
+                        'connection' => 'sessions',
+                        'prefix' => 'myxa-session:',
+                    ],
+                ],
+                'tokens' => [
+                    'length' => 80,
+                    'default_name' => 'worker',
+                    'default_scopes' => ['users:read', 'users:write'],
+                ],
+            ],
+        ]));
+
+        self::assertSame('redis', $config->sessionDriver());
+        self::assertSame('custom_session', $config->sessionCookieName());
+        self::assertSame(900, $config->sessionLifetime());
+        self::assertFalse($config->sessionHttpOnly());
+        self::assertTrue($config->sessionSecure());
+        self::assertSame('Strict', $config->sessionSameSite());
+        self::assertSame(96, $config->sessionLength());
+        self::assertSame('/tmp/myxa-sessions', $config->sessionPath());
+        self::assertSame('sessions', $config->sessionRedisConnection());
+        self::assertSame('myxa-session:', $config->sessionRedisPrefix());
+        self::assertSame(80, $config->tokenLength());
+        self::assertSame('worker', $config->defaultTokenName());
+        self::assertSame(['users:read', 'users:write'], $config->defaultTokenScopes());
+    }
+
+    public function testAuthConfigFallsBackForBlankOrMissingValues(): void
+    {
+        $config = new AuthConfig(new ConfigRepository([
+            'auth' => [
+                'session' => [
+                    'driver' => '',
+                    'same_site' => '   ',
+                    'length' => 1,
+                ],
+                'tokens' => [
+                    'default_name' => '   ',
+                    'default_scopes' => [' ', ''],
+                    'length' => 1,
+                ],
+            ],
+        ]));
+
+        self::assertSame('file', $config->sessionDriver());
+        self::assertNull($config->sessionSameSite());
+        self::assertSame(32, $config->sessionLength());
+        self::assertSame(32, $config->tokenLength());
+        self::assertSame('cli', $config->defaultTokenName());
+        self::assertSame(['*'], $config->defaultTokenScopes());
+    }
+
+    public function testPasswordHasherHashesVerifiesAndRejectsEmptyPasswords(): void
+    {
+        $hasher = new PasswordHasher();
+        $hash = $hasher->hash('secret-123');
+
+        self::assertNotSame('secret-123', $hash);
+        self::assertTrue($hasher->verify('secret-123', $hash));
+        self::assertFalse($hasher->verify('wrong', $hash));
+        self::assertFalse($hasher->verify('secret-123', ''));
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Password cannot be empty.');
+        $hasher->hash('   ');
+    }
+
     public function testUserTokenAndSessionManagersWorkTogether(): void
     {
         $this->install->install();
@@ -205,6 +286,109 @@ final class AuthServicesTest extends TestCase
         self::assertSame(2, $deleted);
         self::assertSame([], $this->tokens->list());
         self::assertNull($this->tokens->resolve($expired['plain_text_token']));
+    }
+
+    public function testTokenManagerUsesDefaultNameAndScopesWhenNotProvided(): void
+    {
+        $this->install->install(false);
+        $this->migrations->migrate($this->connection);
+
+        $user = $this->users->create('defaults@example.com', 'secret-123', 'Defaults');
+        $issued = $this->tokens->issue($user);
+
+        self::assertSame('cli', $issued['token']->getAttribute('name'));
+        self::assertSame('["*"]', $issued['token']->getAttribute('scopes'));
+    }
+
+    public function testTokenManagerListsFiltersAndHandlesBlankOrMissingRevocations(): void
+    {
+        $this->install->install(false);
+        $this->migrations->migrate($this->connection);
+
+        $first = $this->users->create('tokens-first@example.com', 'secret-123', 'First');
+        $second = $this->users->create('tokens-second@example.com', 'secret-123', 'Second');
+        $firstToken = $this->tokens->issue($first, 'first');
+        $secondToken = $this->tokens->issue($second, 'second');
+
+        self::assertNull($this->tokens->resolve('   '));
+        self::assertCount(2, $this->tokens->list());
+        self::assertCount(1, $this->tokens->list($first));
+        self::assertSame($firstToken['token']->getKey(), $this->tokens->list($first)[0]->getKey());
+        self::assertCount(1, $this->tokens->list($second));
+        self::assertSame($secondToken['token']->getKey(), $this->tokens->list($second)[0]->getKey());
+        self::assertFalse($this->tokens->revoke(999999));
+        self::assertSame(0, $this->tokens->prune());
+
+        self::assertTrue($this->tokens->revoke((int) $firstToken['token']->getKey()));
+        self::assertTrue($this->tokens->revoke((int) $firstToken['token']->getKey()));
+    }
+
+    public function testUserManagerCanFindListChangePasswordsAndHandleErrors(): void
+    {
+        $this->install->install(false);
+        $this->migrations->migrate($this->connection);
+
+        $created = $this->users->create('first@example.com', 'secret-123', 'First User');
+        $second = $this->users->create('second@example.com', 'secret-456', null);
+
+        self::assertInstanceOf(\App\Models\User::class, $this->users->find((int) $created->getKey()));
+        self::assertInstanceOf(\App\Models\User::class, $this->users->find('FIRST@example.com'));
+        self::assertNull($this->users->find('missing@example.com'));
+        self::assertCount(2, $this->users->list());
+        self::assertCount(1, $this->users->list(1));
+        self::assertTrue($this->users->verifyPassword($created, 'secret-123'));
+
+        $updated = $this->users->changePassword($created, 'updated-secret');
+        self::assertSame($created->getKey(), $updated->getKey());
+        self::assertTrue($this->users->verifyPassword($updated, 'updated-secret'));
+        self::assertSame($second->getKey(), $this->users->resolveUser((int) $second->getKey())->getKey());
+
+        try {
+            $this->users->create('first@example.com', 'secret-123', 'Duplicate');
+            self::fail('Expected duplicate user creation to fail.');
+        } catch (\RuntimeException $exception) {
+            self::assertStringContainsString('already exists', $exception->getMessage());
+        }
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('was not found');
+        $this->users->resolveUser('missing@example.com');
+    }
+
+    public function testSessionManagerReturnsNullForBlankValuesAndSupportsRevokeBranches(): void
+    {
+        $this->install->install();
+        $this->migrations->migrate($this->connection);
+
+        $user = $this->users->create('session@example.com', 'secret-123', 'Session User');
+        $issued = $this->sessions->issue($user);
+
+        self::assertNull($this->sessions->resolve('   '));
+        self::assertTrue($this->sessions->revoke((int) $issued['session']->identifier()));
+        self::assertTrue($this->sessions->revoke((int) $issued['session']->identifier()));
+        self::assertFalse($this->sessions->revoke(999999));
+    }
+
+    public function testBearerTokenAndSessionResolversReturnNullWhenBackingUserIsMissing(): void
+    {
+        $this->install->install();
+        $this->migrations->migrate($this->connection);
+
+        $user = $this->users->create('ghost@example.com', 'secret-123', 'Ghost');
+        $issuedToken = $this->tokens->issue($user);
+        $issuedSession = $this->sessions->issue($user);
+
+        self::assertTrue($user->delete());
+
+        $tokenResolver = new BearerTokenResolver($this->tokens, $this->users);
+        $sessionResolver = new SessionUserResolver($this->sessions, $this->users);
+        $request = new Request(
+            cookies: ['auth_session' => $issuedSession['plain_text_session']],
+            server: ['HTTP_AUTHORIZATION' => 'Bearer ' . $issuedToken['plain_text_token']],
+        );
+
+        self::assertNull($tokenResolver->resolve($issuedToken['plain_text_token'], $request));
+        self::assertNull($sessionResolver->resolve($issuedSession['plain_text_session'], $request));
     }
 
     public function testSessionManagerSupportsFileDriver(): void

@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Test\Unit\Providers;
 
 use App\Config\ConfigRepository;
+use App\Auth\SessionStoreInterface;
+use App\Auth\Stores\FileSessionStore;
+use App\RateLimit\RedisRateLimiterStore;
 use App\Providers\CacheServiceProvider;
 use App\Providers\ConfigServiceProvider;
 use App\Providers\DatabaseServiceProvider;
@@ -23,15 +26,19 @@ use Myxa\Application;
 use Myxa\Cache\CacheManager;
 use Myxa\Container\Exceptions\NotFoundException;
 use Myxa\Database\DatabaseManager;
+use Myxa\Database\Model\Model;
 use Myxa\Events\EventBusInterface;
 use Myxa\Http\Request;
 use Myxa\Http\Response;
 use Myxa\RateLimit\RateLimiter;
+use Myxa\RateLimit\RateLimiterStoreInterface;
 use Myxa\Redis\RedisManager;
 use Myxa\Redis\Connection\InMemoryRedisStore;
 use Myxa\Redis\Connection\RedisConnection;
 use Myxa\Routing\Router;
 use Myxa\Storage\StorageManager;
+use Myxa\Support\Facades\DB;
+use Myxa\Support\Facades\Redis;
 use PHPUnit\Framework\Attributes\CoversClass;
 use ReflectionProperty;
 use Test\TestCase;
@@ -172,6 +179,38 @@ final class InfrastructureProvidersTest extends TestCase
         self::assertSame($manager, $app->make('db'));
     }
 
+    public function testDatabaseProviderDirectRegisterAndBootExposeFacadeManager(): void
+    {
+        $app = new Application();
+        $app->instance(ConfigRepository::class, new ConfigRepository([
+            'database' => [
+                'default' => 'analytics',
+                'connections' => [
+                    'analytics' => [
+                        'driver' => 'mysql',
+                        'host' => 'db',
+                        'database' => 'myxa',
+                    ],
+                ],
+            ],
+        ]));
+
+        DB::clearManager();
+        $provider = new DatabaseServiceProvider();
+        $provider->setApplication($app);
+        $provider->register();
+        $app->boot();
+
+        $manager = $app->make(DatabaseManager::class);
+
+        self::assertInstanceOf(DatabaseManager::class, DB::getManager());
+        self::assertSame('analytics', DB::getManager()->getDefaultConnection());
+        self::assertTrue(DB::getManager()->hasConnection('analytics'));
+        $modelManager = new ReflectionProperty(Model::class, 'sharedManager');
+        $modelManager->setAccessible(true);
+        self::assertSame($manager, $modelManager->getValue());
+    }
+
     public function testDatabaseProviderSkipsBindingWhenNoValidConnectionsExist(): void
     {
         $app = new Application();
@@ -221,6 +260,35 @@ final class InfrastructureProvidersTest extends TestCase
         self::assertSame('cache', $manager->getDefaultConnection());
         self::assertTrue($manager->hasConnection('cache'));
         self::assertSame($manager, $app->make('redis'));
+    }
+
+    public function testRedisProviderDirectRegisterAndBootExposeFacadeManager(): void
+    {
+        $app = new Application();
+        $app->instance(ConfigRepository::class, new ConfigRepository([
+            'services' => [
+                'redis' => [
+                    'default' => 'cache',
+                    'connections' => [
+                        'cache' => [
+                            'host' => 'redis',
+                        ],
+                    ],
+                ],
+            ],
+        ]));
+
+        Redis::clearManager();
+        $provider = new RedisServiceProvider();
+        $provider->setApplication($app);
+        $provider->register();
+        $app->boot();
+
+        $manager = $app->make(RedisManager::class);
+
+        self::assertInstanceOf(RedisManager::class, Redis::getManager());
+        self::assertTrue(Redis::getManager()->hasConnection('cache'));
+        self::assertSame('cache', $manager->getDefaultConnection());
     }
 
     public function testRoutesProviderLoadsRouteFilesFromRoutesDirectory(): void
@@ -325,6 +393,72 @@ PHP);
         self::assertSame($bus, $app->make('events'));
     }
 
+    public function testAuthProviderDirectRegisterCreatesAuthManagersAndFileSessionStore(): void
+    {
+        $app = new Application();
+        $app->instance(ConfigRepository::class, new ConfigRepository([
+            'auth' => [
+                'session' => [
+                    'driver' => 'file',
+                    'path' => storage_path('framework/testing/provider-auth-sessions'),
+                    'cookie' => 'auth_session',
+                ],
+                'tokens' => [
+                    'length' => 40,
+                    'default_name' => 'cli',
+                    'default_scopes' => ['*'],
+                ],
+            ],
+        ]));
+
+        $provider = new AuthServiceProvider();
+        $provider->setApplication($app);
+        $provider->register();
+
+        self::assertInstanceOf(AuthManager::class, $app->make(AuthManager::class));
+        self::assertInstanceOf(SessionGuard::class, $app->make(SessionGuard::class));
+        self::assertInstanceOf(BearerTokenResolverInterface::class, $app->make(BearerTokenResolverInterface::class));
+        self::assertInstanceOf(SessionStoreInterface::class, $app->make(SessionStoreInterface::class));
+        self::assertInstanceOf(FileSessionStore::class, $app->make(SessionStoreInterface::class));
+        self::assertSame($app->make(AuthManager::class), $app->make('auth'));
+    }
+
+    public function testRateLimitProviderDirectRegisterCreatesRedisBackedLimiter(): void
+    {
+        $app = new Application();
+        $app->instance(ConfigRepository::class, new ConfigRepository([
+            'rate_limit' => [
+                'default_store' => 'redis',
+                'stores' => [
+                    'redis' => [
+                        'driver' => 'redis',
+                        'connection' => 'cache',
+                        'prefix' => 'test-rate:',
+                    ],
+                ],
+            ],
+        ]));
+        $app->instance(RedisManager::class, new RedisManager('cache', new RedisConnection(new InMemoryRedisStore())));
+
+        $provider = new RateLimitServiceProvider();
+        $provider->setApplication($app);
+        $provider->register();
+
+        self::assertInstanceOf(RateLimiter::class, $app->make(RateLimiter::class));
+        self::assertInstanceOf(RateLimiterStoreInterface::class, $app->make(RateLimiterStoreInterface::class));
+        self::assertInstanceOf(RedisRateLimiterStore::class, $app->make(RateLimiterStoreInterface::class));
+        self::assertSame($app->make(RateLimiter::class), $app->make('rate.limiter'));
+    }
+
+    public function testEventProviderExposesAnEmptyListenerMapByDefault(): void
+    {
+        $provider = new EventServiceProvider();
+        $listeners = new \ReflectionMethod(EventServiceProvider::class, 'listeners');
+        $listeners->setAccessible(true);
+
+        self::assertSame([], $listeners->invoke($provider));
+    }
+
     public function testStorageProviderRegistersConfiguredLocalDisks(): void
     {
         $localRoot = storage_path('framework/testing/storage-provider-' . uniqid('', true) . '/local');
@@ -363,6 +497,57 @@ PHP);
             $this->removeDirectory(dirname($localRoot));
             $this->removeDirectory(dirname($publicRoot));
         }
+    }
+
+    public function testStorageProviderRegistersDatabaseBackedDiskWhenConfigured(): void
+    {
+        $app = new Application();
+        $app->instance(ConfigRepository::class, new ConfigRepository([
+            'storage' => [
+                'default' => 'db',
+                'disks' => [
+                    'db' => [
+                        'driver' => 'database',
+                        'file_table' => 'files_meta',
+                        'content_table' => 'files_blob',
+                    ],
+                ],
+            ],
+        ]));
+        $app->instance(DatabaseManager::class, new DatabaseManager('testing'));
+
+        $app->register(StorageServiceProvider::class);
+        $app->boot();
+
+        $manager = $app->make(StorageManager::class);
+        $disk = $manager->storage('db');
+
+        self::assertSame('db', $manager->getDefaultStorage());
+        self::assertSame('db', $disk->alias());
+    }
+
+    public function testStorageProviderSkipsBindingWhenNoSupportedDisksExist(): void
+    {
+        $app = new Application();
+        $app->instance(ConfigRepository::class, new ConfigRepository([
+            'storage' => [
+                'disks' => [
+                    'broken' => [
+                        'driver' => 'local',
+                        'root' => '',
+                    ],
+                    'unknown' => [
+                        'driver' => 's3',
+                    ],
+                ],
+            ],
+        ]));
+
+        $app->register(StorageServiceProvider::class);
+        $app->boot();
+
+        $this->expectException(NotFoundException::class);
+        $app->make('storage');
     }
 
     public function testRateLimitProviderRegistersConfiguredFileStore(): void
