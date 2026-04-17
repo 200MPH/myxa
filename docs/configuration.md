@@ -189,11 +189,14 @@ The extra `RATE_LIMIT_*` values shown above are optional overrides. The app alre
 Useful auth-related environment variables include:
 
 ```text
+AUTH_SESSION_DRIVER=file
 AUTH_SESSION_COOKIE=myxa_session
 AUTH_SESSION_LIFETIME=1209600
 AUTH_SESSION_SAME_SITE=Lax
 AUTH_SESSION_SECURE=false
 AUTH_SESSION_LENGTH=64
+AUTH_SESSION_REDIS_CONNECTION=default
+AUTH_SESSION_REDIS_PREFIX=session:
 AUTH_TOKEN_LENGTH=40
 AUTH_TOKEN_NAME=cli
 AUTH_TOKEN_SCOPES=*
@@ -207,6 +210,12 @@ The app currently provides:
 - session-based `web` auth
 - bearer-token `api` auth
 - CLI commands for users and tokens
+
+Session storage drivers:
+
+- `file` -> default and simplest entry point for local development
+- `redis` -> recommended for scaled or multi-node deployments
+- `database` -> useful when you want inspectable and queryable persisted session rows
 
 ## Versioning
 

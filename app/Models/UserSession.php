@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Auth\SessionRecordInterface;
 use DateTimeImmutable;
 use Myxa\Database\Attributes\Guarded;
 use Myxa\Database\Attributes\Hidden;
@@ -12,7 +13,7 @@ use Myxa\Database\Model\Model;
 use Myxa\Database\Model\Relation;
 use Throwable;
 
-final class UserSession extends Model
+final class UserSession extends Model implements SessionRecordInterface
 {
     use HasTimestamps;
 
@@ -40,6 +41,36 @@ final class UserSession extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function identifier(): string
+    {
+        return (string) ($this->getKey() ?? '');
+    }
+
+    public function userId(): int
+    {
+        return (int) ($this->user_id ?? 0);
+    }
+
+    public function driver(): string
+    {
+        return 'database';
+    }
+
+    public function lastUsedAt(): ?DateTimeImmutable
+    {
+        return $this->date($this->last_used_at);
+    }
+
+    public function expiresAt(): ?DateTimeImmutable
+    {
+        return $this->date($this->expires_at);
+    }
+
+    public function revokedAt(): ?DateTimeImmutable
+    {
+        return $this->date($this->revoked_at);
+    }
+
     /**
      * Determine whether the session has already expired.
      */
@@ -64,5 +95,18 @@ final class UserSession extends Model
     public function revoked(): bool
     {
         return $this->revoked_at !== null && trim($this->revoked_at) !== '';
+    }
+
+    private function date(?string $value): ?DateTimeImmutable
+    {
+        if ($value === null || trim($value) === '') {
+            return null;
+        }
+
+        try {
+            return new DateTimeImmutable($value);
+        } catch (Throwable) {
+            return null;
+        }
     }
 }

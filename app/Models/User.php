@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Auth\SessionRecordInterface;
 use Myxa\Database\Attributes\Guarded;
 use Myxa\Database\Attributes\Hidden;
 use Myxa\Database\Model\HasTimestamps;
@@ -55,11 +56,11 @@ final class User extends Model
     /**
      * Return the session resolved for the current request, if any.
      */
-    public function currentSession(): ?UserSession
+    public function currentSession(): ?SessionRecordInterface
     {
         $session = $this->getRelation('session');
 
-        return $session instanceof UserSession ? $session : null;
+        return $session instanceof SessionRecordInterface ? $session : null;
     }
 
     /**

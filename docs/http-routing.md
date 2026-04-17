@@ -180,6 +180,8 @@ Route::get('/dashboard', [DashboardController::class, 'show'])
     ->middleware(AuthMiddleware::using('web'));
 ```
 
+The `web` guard uses the configured session driver from `config/auth.php`. The current app supports `file`, `redis`, and `database` session persistence behind the same session cookie flow.
+
 Protect an API route:
 
 ```php

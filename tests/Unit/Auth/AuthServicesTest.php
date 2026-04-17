@@ -8,6 +8,7 @@ use App\Auth\AuthConfig;
 use App\Auth\AuthInstallService;
 use App\Auth\BearerTokenResolver;
 use App\Auth\PasswordHasher;
+use App\Auth\SessionRecordInterface;
 use App\Auth\SessionManager;
 use App\Auth\SessionUserResolver;
 use App\Auth\TokenManager;
@@ -23,6 +24,9 @@ use Myxa\Database\Connection\PdoConnectionConfig;
 use Myxa\Database\DatabaseManager;
 use Myxa\Database\Model\Model;
 use Myxa\Http\Request;
+use Myxa\Redis\RedisManager;
+use Myxa\Redis\Connection\InMemoryRedisStore;
+use Myxa\Redis\Connection\RedisConnection;
 use PDO;
 use PHPUnit\Framework\Attributes\CoversClass;
 use ReflectionProperty;
@@ -82,11 +86,12 @@ final class AuthServicesTest extends TestCase
                     'namespace' => 'App\\Models',
                 ],
             ],
-            'auth' => [
-                'session' => [
-                    'cookie' => 'auth_session',
-                    'lifetime' => 3600,
-                    'length' => 64,
+                'auth' => [
+                    'session' => [
+                        'driver' => 'database',
+                        'cookie' => 'auth_session',
+                        'lifetime' => 3600,
+                        'length' => 64,
                 ],
                 'tokens' => [
                     'length' => 40,
@@ -117,7 +122,7 @@ final class AuthServicesTest extends TestCase
         $passwords = new PasswordHasher();
         $this->users = new UserManager($passwords);
         $this->tokens = new TokenManager($authConfig, $this->users);
-        $this->sessions = new SessionManager($authConfig, $this->users);
+        $this->sessions = new SessionManager($authConfig, $this->users, new \App\Auth\Stores\DatabaseSessionStore());
     }
 
     protected function tearDown(): void
@@ -164,6 +169,7 @@ final class AuthServicesTest extends TestCase
         self::assertCount(1, $reloadedUser->getRelation('tokens'));
         self::assertCount(1, $reloadedUser->getRelation('sessions'));
         self::assertInstanceOf(\App\Models\User::class, $resolvedToken->user()->first());
+        self::assertInstanceOf(\App\Models\UserSession::class, $resolvedSession);
         self::assertInstanceOf(\App\Models\User::class, $resolvedSession->user()->first());
 
         $tokenResolver = new BearerTokenResolver($this->tokens, $this->users);
@@ -201,6 +207,76 @@ final class AuthServicesTest extends TestCase
         self::assertNull($this->tokens->resolve($expired['plain_text_token']));
     }
 
+    public function testSessionManagerSupportsFileDriver(): void
+    {
+        $this->install->install(false);
+        $this->migrations->migrate($this->connection);
+
+        $sessionsPath = $this->rootPath . '/sessions-file';
+        mkdir($sessionsPath, 0777, true);
+
+        $sessionManager = new SessionManager(
+            $this->makeAuthConfig([
+                'driver' => 'file',
+                'path' => $sessionsPath,
+            ]),
+            $this->users,
+            new \App\Auth\Stores\FileSessionStore($sessionsPath),
+        );
+
+        $user = $this->users->create('file@example.com', 'secret-123', 'File User');
+        $issued = $sessionManager->issue($user);
+        $resolved = $sessionManager->resolve($issued['plain_text_session']);
+
+        self::assertInstanceOf(SessionRecordInterface::class, $issued['session']);
+        self::assertSame('file', $issued['session']->driver());
+        self::assertInstanceOf(SessionRecordInterface::class, $resolved);
+        self::assertSame((int) $user->getKey(), $resolved->userId());
+
+        $resolver = new SessionUserResolver($sessionManager, $this->users);
+        $request = new Request(cookies: ['auth_session' => $issued['plain_text_session']]);
+        $resolvedUser = $resolver->resolve($issued['plain_text_session'], $request);
+
+        self::assertInstanceOf(\App\Models\User::class, $resolvedUser);
+        self::assertNotNull($resolvedUser->currentSession());
+        self::assertSame('file', $resolvedUser->currentSession()->driver());
+    }
+
+    public function testSessionManagerSupportsRedisDriver(): void
+    {
+        $this->install->install(false);
+        $this->migrations->migrate($this->connection);
+
+        $redis = new RedisManager('sessions', new RedisConnection(new InMemoryRedisStore()));
+        $sessionManager = new SessionManager(
+            $this->makeAuthConfig([
+                'driver' => 'redis',
+                'redis' => [
+                    'connection' => 'sessions',
+                    'prefix' => 'test-session:',
+                ],
+            ]),
+            $this->users,
+            new \App\Auth\Stores\RedisSessionStore($redis, 'sessions', 'test-session:'),
+        );
+
+        $user = $this->users->create('redis@example.com', 'secret-123', 'Redis User');
+        $issued = $sessionManager->issue($user);
+        $resolved = $sessionManager->resolve($issued['plain_text_session']);
+
+        self::assertInstanceOf(SessionRecordInterface::class, $resolved);
+        self::assertSame('redis', $resolved->driver());
+        self::assertSame((int) $user->getKey(), $resolved->userId());
+
+        $resolver = new SessionUserResolver($sessionManager, $this->users);
+        $request = new Request(cookies: ['auth_session' => $issued['plain_text_session']]);
+        $resolvedUser = $resolver->resolve($issued['plain_text_session'], $request);
+
+        self::assertInstanceOf(\App\Models\User::class, $resolvedUser);
+        self::assertNotNull($resolvedUser->currentSession());
+        self::assertSame('redis', $resolvedUser->currentSession()->driver());
+    }
+
     private function makeInMemoryConnection(): PdoConnection
     {
         $pdo = new PDO('sqlite::memory:');
@@ -218,6 +294,32 @@ final class AuthServicesTest extends TestCase
         $property->setValue($connection, $pdo);
 
         return $connection;
+    }
+
+    private function makeAuthConfig(array $sessionOverrides = []): AuthConfig
+    {
+        $session = array_replace_recursive([
+            'driver' => 'file',
+            'cookie' => 'auth_session',
+            'lifetime' => 3600,
+            'length' => 64,
+            'path' => $this->rootPath . '/sessions',
+            'redis' => [
+                'connection' => 'default',
+                'prefix' => 'session:',
+            ],
+        ], $sessionOverrides);
+
+        return new AuthConfig(new ConfigRepository([
+            'auth' => [
+                'session' => $session,
+                'tokens' => [
+                    'length' => 40,
+                    'default_name' => 'cli',
+                    'default_scopes' => ['*'],
+                ],
+            ],
+        ]));
     }
 
     private function removeDirectory(string $path): void

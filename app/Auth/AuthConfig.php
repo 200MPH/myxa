@@ -24,6 +24,16 @@ final class AuthConfig
     }
 
     /**
+     * Return the configured session persistence driver.
+     */
+    public function sessionDriver(): string
+    {
+        $driver = trim((string) $this->config->get('auth.session.driver', 'file'));
+
+        return $driver !== '' ? $driver : 'file';
+    }
+
+    /**
      * Return the session lifetime in seconds.
      */
     public function sessionLifetime(): int
@@ -63,6 +73,30 @@ final class AuthConfig
     public function sessionLength(): int
     {
         return max(32, (int) $this->config->get('auth.session.length', 64));
+    }
+
+    /**
+     * Return the local filesystem path used by the file session driver.
+     */
+    public function sessionPath(): string
+    {
+        return (string) $this->config->get('auth.session.path', storage_path('sessions'));
+    }
+
+    /**
+     * Return the Redis connection alias used by the Redis session driver.
+     */
+    public function sessionRedisConnection(): string
+    {
+        return (string) $this->config->get('auth.session.redis.connection', 'default');
+    }
+
+    /**
+     * Return the key prefix used by the Redis session driver.
+     */
+    public function sessionRedisPrefix(): string
+    {
+        return (string) $this->config->get('auth.session.redis.prefix', 'session:');
     }
 
     /**

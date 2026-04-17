@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Auth;
 
 use App\Models\User;
-use Myxa\Auth\SessionUserResolverInterface;
 use Myxa\Http\Request;
+use Myxa\Auth\SessionUserResolverInterface;
 
 final class SessionUserResolver implements SessionUserResolverInterface
 {
@@ -29,12 +29,7 @@ final class SessionUserResolver implements SessionUserResolverInterface
             return null;
         }
 
-        $userId = $session->getAttribute('user_id');
-        if (!is_int($userId)) {
-            return null;
-        }
-
-        $user = $this->users->find($userId);
+        $user = $this->users->find($session->userId());
         if (!$user instanceof User) {
             return null;
         }

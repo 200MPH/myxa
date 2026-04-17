@@ -227,6 +227,13 @@ Generate auth migrations:
 ./myxa migrate
 ```
 
+If your session driver is `file` or `redis`, you can skip the optional database session table:
+
+```bash
+./myxa auth:install --without-sessions
+./myxa migrate
+```
+
 Create a user:
 
 ```bash

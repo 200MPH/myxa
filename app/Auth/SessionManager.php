@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Auth;
 
 use App\Models\User;
-use App\Models\UserSession;
 use DateTimeImmutable;
 
 final class SessionManager
@@ -16,27 +15,26 @@ final class SessionManager
     public function __construct(
         private readonly AuthConfig $config,
         private readonly UserManager $users,
+        private readonly SessionStoreInterface $store,
     ) {
     }
 
     /**
      * Create a new user session and return the plain-text session ID exactly once.
      *
-     * @return array{session: UserSession, plain_text_session: string}
+     * @return array{session: SessionRecordInterface, plain_text_session: string}
      */
     public function issue(User|int|string $user, ?DateTimeImmutable $expiresAt = null): array
     {
         $resolvedUser = $this->users->resolveUser($user);
         $plainTextSession = $this->randomHex($this->config->sessionLength());
-        $session = new UserSession();
-        $session->setAttribute('user_id', $resolvedUser->getKey());
-        $session->setAttribute('session_hash', hash('sha256', $plainTextSession));
-        $session->setAttribute('last_used_at', (new DateTimeImmutable())->format(DATE_ATOM));
-        $session->setAttribute(
-            'expires_at',
-            ($expiresAt ?? new DateTimeImmutable('+' . $this->config->sessionLifetime() . ' seconds'))->format(DATE_ATOM),
+        $now = new DateTimeImmutable();
+        $session = $this->store->issue(
+            (int) $resolvedUser->getKey(),
+            $plainTextSession,
+            $expiresAt ?? new DateTimeImmutable('+' . $this->config->sessionLifetime() . ' seconds'),
+            $now,
         );
-        $session->save();
 
         return [
             'session' => $session,
@@ -47,44 +45,22 @@ final class SessionManager
     /**
      * Resolve a valid session from its plain-text cookie value.
      */
-    public function resolve(string $plainTextSession): ?UserSession
+    public function resolve(string $plainTextSession): ?SessionRecordInterface
     {
         $plainTextSession = trim($plainTextSession);
         if ($plainTextSession === '') {
             return null;
         }
 
-        $session = UserSession::query()
-            ->where('session_hash', '=', hash('sha256', $plainTextSession))
-            ->first();
-
-        if (!$session instanceof UserSession || $session->revoked() || $session->expired()) {
-            return null;
-        }
-
-        $session->setAttribute('last_used_at', (new DateTimeImmutable())->format(DATE_ATOM));
-        $session->save();
-
-        return $session;
+        return $this->store->resolve($plainTextSession, new DateTimeImmutable());
     }
 
     /**
-     * Revoke a session by its numeric primary key.
+     * Revoke a session by its store-specific identifier.
      */
-    public function revoke(int $sessionId): bool
+    public function revoke(int|string $sessionId): bool
     {
-        $session = UserSession::find($sessionId);
-        if (!$session instanceof UserSession) {
-            return false;
-        }
-
-        if ($session->revoked()) {
-            return true;
-        }
-
-        $session->setAttribute('revoked_at', (new DateTimeImmutable())->format(DATE_ATOM));
-
-        return $session->save();
+        return $this->store->revoke((string) $sessionId, new DateTimeImmutable());
     }
 
     private function randomHex(int $length): string
