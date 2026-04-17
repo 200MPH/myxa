@@ -15,6 +15,7 @@ return [
         App\Providers\ConfigServiceProvider::class,
         App\Providers\FrameworkServiceProvider::class,
         App\Providers\AppServiceProvider::class,
+        App\Providers\EventServiceProvider::class,
         App\Providers\CacheServiceProvider::class,
         App\Providers\RoutesServiceProvider::class,
         App\Providers\DatabaseServiceProvider::class,

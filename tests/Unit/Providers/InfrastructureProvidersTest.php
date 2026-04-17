@@ -8,6 +8,7 @@ use App\Config\ConfigRepository;
 use App\Providers\CacheServiceProvider;
 use App\Providers\ConfigServiceProvider;
 use App\Providers\DatabaseServiceProvider;
+use App\Providers\EventServiceProvider;
 use App\Providers\FrameworkServiceProvider;
 use App\Providers\AuthServiceProvider;
 use App\Providers\RedisServiceProvider;
@@ -20,6 +21,7 @@ use Myxa\Application;
 use Myxa\Cache\CacheManager;
 use Myxa\Container\Exceptions\NotFoundException;
 use Myxa\Database\DatabaseManager;
+use Myxa\Events\EventBusInterface;
 use Myxa\Http\Request;
 use Myxa\Http\Response;
 use Myxa\Redis\RedisManager;
@@ -31,6 +33,7 @@ use Test\TestCase;
 #[CoversClass(CacheServiceProvider::class)]
 #[CoversClass(ConfigServiceProvider::class)]
 #[CoversClass(DatabaseServiceProvider::class)]
+#[CoversClass(EventServiceProvider::class)]
 #[CoversClass(FrameworkServiceProvider::class)]
 #[CoversClass(AuthServiceProvider::class)]
 #[CoversClass(RedisServiceProvider::class)]
@@ -269,6 +272,19 @@ PHP);
                 rmdir($cacheDirectory);
             }
         }
+    }
+
+    public function testEventProviderRegistersSharedEventBus(): void
+    {
+        $app = new Application();
+
+        $app->register(EventServiceProvider::class);
+        $app->boot();
+
+        $bus = $app->make(EventBusInterface::class);
+
+        self::assertInstanceOf(EventBusInterface::class, $bus);
+        self::assertSame($bus, $app->make('events'));
     }
 
     public function testAuthProviderRegistersManagerResolversAndCustomSessionCookie(): void
