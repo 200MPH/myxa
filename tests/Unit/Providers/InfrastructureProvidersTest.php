@@ -13,6 +13,7 @@ use App\Providers\FrameworkServiceProvider;
 use App\Providers\AuthServiceProvider;
 use App\Providers\RedisServiceProvider;
 use App\Providers\RoutesServiceProvider;
+use App\Providers\StorageServiceProvider;
 use App\Support\Facades\Config;
 use Myxa\Auth\AuthManager;
 use Myxa\Auth\BearerTokenResolverInterface;
@@ -26,6 +27,7 @@ use Myxa\Http\Request;
 use Myxa\Http\Response;
 use Myxa\Redis\RedisManager;
 use Myxa\Routing\Router;
+use Myxa\Storage\StorageManager;
 use PHPUnit\Framework\Attributes\CoversClass;
 use ReflectionProperty;
 use Test\TestCase;
@@ -38,6 +40,7 @@ use Test\TestCase;
 #[CoversClass(AuthServiceProvider::class)]
 #[CoversClass(RedisServiceProvider::class)]
 #[CoversClass(RoutesServiceProvider::class)]
+#[CoversClass(StorageServiceProvider::class)]
 final class InfrastructureProvidersTest extends TestCase
 {
     public function testFrameworkProviderRegistersCoreHttpServices(): void
@@ -287,6 +290,46 @@ PHP);
         self::assertSame($bus, $app->make('events'));
     }
 
+    public function testStorageProviderRegistersConfiguredLocalDisks(): void
+    {
+        $localRoot = storage_path('framework/testing/storage-provider-' . uniqid('', true) . '/local');
+        $publicRoot = storage_path('framework/testing/storage-provider-' . uniqid('', true) . '/public');
+
+        $app = new Application();
+        $app->instance(ConfigRepository::class, new ConfigRepository([
+            'storage' => [
+                'default' => 'local',
+                'disks' => [
+                    'local' => [
+                        'driver' => 'local',
+                        'root' => $localRoot,
+                    ],
+                    'public' => [
+                        'driver' => 'local',
+                        'root' => $publicRoot,
+                    ],
+                ],
+            ],
+        ]));
+
+        try {
+            $app->register(StorageServiceProvider::class);
+            $app->boot();
+
+            $manager = $app->make(StorageManager::class);
+            $stored = $manager->put('avatars/jane.txt', 'hello-storage');
+
+            self::assertSame('local', $manager->getDefaultStorage());
+            self::assertTrue($manager->hasStorage('public'));
+            self::assertSame('local', $stored->storage());
+            self::assertSame('hello-storage', $manager->read('avatars/jane.txt'));
+            self::assertSame($manager, $app->make('storage'));
+        } finally {
+            $this->removeDirectory(dirname($localRoot));
+            $this->removeDirectory(dirname($publicRoot));
+        }
+    }
+
     public function testAuthProviderRegistersManagerResolversAndCustomSessionCookie(): void
     {
         $app = new Application();
@@ -309,5 +352,29 @@ PHP);
         self::assertSame($manager, $app->make('auth'));
         self::assertInstanceOf(BearerTokenResolverInterface::class, $app->make(BearerTokenResolverInterface::class));
         self::assertSame('custom_session', $cookieProperty->getValue($guard));
+    }
+
+    private function removeDirectory(string $path): void
+    {
+        if (!is_dir($path)) {
+            return;
+        }
+
+        foreach (scandir($path) ?: [] as $entry) {
+            if ($entry === '.' || $entry === '..') {
+                continue;
+            }
+
+            $child = $path . '/' . $entry;
+
+            if (is_dir($child)) {
+                $this->removeDirectory($child);
+                continue;
+            }
+
+            unlink($child);
+        }
+
+        rmdir($path);
     }
 }

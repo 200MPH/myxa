@@ -19,6 +19,7 @@ return [
         App\Providers\CacheServiceProvider::class,
         App\Providers\RoutesServiceProvider::class,
         App\Providers\DatabaseServiceProvider::class,
+        App\Providers\StorageServiceProvider::class,
         App\Providers\AuthServiceProvider::class,
         App\Providers\RedisServiceProvider::class,
     ],
