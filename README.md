@@ -1,83 +1,65 @@
-# Myxa is a tiny, flexible, powerful, and quietly smart PHP Framework
+# Myxa Project
 
-Ultra-light, modern PHP framework built for speed, clarity, and extensibility.
-Inspired by nature. Built for developers.
+This repository is the application skeleton built on top of the Myxa framework. It ships with Docker, a growing CLI, app-level providers, and examples of how to build HTTP, console, database, auth, cache, storage, event, and rate-limit features in one place.
 
-## Local development with Docker
+## Quick Start
 
-This project ships with a local stack built around:
+1. Copy the environment file:
 
-- PHP 8.4 FPM
-- nginx
-- MySQL 8.4
-- Redis 7
-- local HTTPS support
+```bash
+cp .env.example .env
+```
 
-### Start the stack
+2. Start the local stack:
 
-1. Copy `.env.example` to `.env`.
-2. Run `docker compose up --build -d`.
-3. Open `https://myxa.localhost`.
+```bash
+docker compose up --build -d
+```
 
-### Useful commands
+3. Install PHP dependencies inside the app container:
 
-- Install PHP dependencies: `docker compose exec app composer install`
-- Open a shell in the PHP container: `docker compose exec app sh`
-- Show available app commands: `./myxa`
-- Show the current app version: `./myxa version:show`
-- Generate `version.json` from Git metadata: `./myxa version:sync`
-- Build the route cache: `docker compose exec app composer route:cache`
-- Clear the route cache: `docker compose exec app composer route:clear`
-- Stop the stack: `docker compose down`
+```bash
+docker compose exec app composer install
+```
 
-Database is exposed on `localhost:3306` and Redis on `localhost:6380` by default.
+4. Open the app:
 
-If port `80` is already in use on your machine, change `APP_PORT` in `.env` and use that port in the browser instead.
-If port `443` is already in use on your machine, change `APP_SSL_PORT` in `.env` and use that HTTPS port instead.
+```text
+https://myxa.localhost
+```
 
-On first boot, nginx generates a self-signed certificate for `myxa.localhost` automatically.
-Your browser will likely show a warning until you trust the certificate authority or switch to a tool such as `mkcert`.
-Docker Desktop will show the stack as `myxa-project` by default. Change `COMPOSE_PROJECT_NAME` in `.env` if you want a different name.
+If you want the full command list, run:
 
-PHP settings are split by environment:
+```bash
+./myxa
+```
 
-- `APP_ENV=local` uses development PHP settings with visible errors
-- `APP_ENV=production` uses production PHP settings with hidden errors and logging enabled
+## Common Commands
 
-## Caching
+```bash
+./myxa version:show
+./myxa route:cache
+./myxa route:clear
+./myxa cache:clear
+./myxa storage:link
+./myxa migrate
+```
 
-The app now wires the framework cache manager to a file-backed store in `storage/cache`.
+## Documentation
 
-Route caching is intended for production deployments:
+- [Getting Started](docs/getting-started.md)
+- [Configuration](docs/configuration.md)
+- [Console and Scaffolding](docs/console-and-scaffolding.md)
+- [HTTP, Routing, Controllers, and Middleware](docs/http-routing.md)
+- [Database, Query Builder, Models, and Migrations](docs/database.md)
+- [Events, Listeners, and Services](docs/events-and-services.md)
+- [Cache and Storage](docs/cache-and-storage.md)
 
-- `APP_ENV=production` enables route cache usage by default
-- `./myxa` shows every command registered by `App\Console\Kernel`
-- `composer route:cache` compiles `routes/*.php` into `storage/cache/framework/routes.php`
-- `composer route:clear` removes the compiled manifest
+## Project Notes
 
-Route cache compilation only supports cacheable route definitions. Closure handlers or closure-based middleware should be replaced with controller actions or class-based middleware before caching.
+- The preferred local CLI entry point is `./myxa`.
+- Routes are not cached automatically. Use `./myxa route:cache` when you want a compiled route manifest.
+- Public file URLs should use `/storage/...`, not `/public/storage/...`.
+- The `app` Docker service runs as your host UID/GID by default so files created by web requests are easier to manage on the host.
 
-## Versioning
-
-Application version metadata is stored in a generated `version.json` manifest at the project root.
-
-- `./myxa version:sync` reads Git metadata and writes the manifest
-- `./myxa version:show` prints the currently resolved version details
-- `./myxa --version` uses the same resolved application version
-- `/health` includes the resolved version and version source
-
-Recommended workflow:
-
-1. Create and push your Git tag as usual.
-2. During CI or deployment, run `./myxa version:sync`.
-3. Ship the generated `version.json` with the built artifact or deploy output.
-
-`version.json` is intentionally ignored by Git so runtime code can read a stable manifest without requiring `.git` to be present in production.
-
-## Assets
-
-Use the following convention for frontend files:
-
-- `public/assets/` for browser-served assets
-- `resources/` for source assets you edit before a build step exists
-- `storage/` for runtime-generated files such as uploads
+For deeper framework internals, the upstream module guides live under `vendor/200mph/myxa-framework/src/*/README.md`.

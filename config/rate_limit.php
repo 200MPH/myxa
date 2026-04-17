@@ -11,7 +11,7 @@ return [
         ],
         'redis' => [
             'driver' => 'redis',
-            'connection' => (string) env('RATE_LIMIT_REDIS_CONNECTION', (string) env('REDIS_CONNECTION', 'cache')),
+            'connection' => (string) env('RATE_LIMIT_REDIS_CONNECTION', (string) env('REDIS_CONNECTION', 'default')),
             'prefix' => (string) env('RATE_LIMIT_REDIS_PREFIX', 'rate-limit:'),
         ],
     ],

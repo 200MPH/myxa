@@ -16,24 +16,24 @@ exit($kernel->handle($argv));
 
 if [ -f "/.dockerenv" ]; then
     export MYXA_CLI_BASE_PATH="$SCRIPT_DIR"
-    exec php -r "$PHP_BOOTSTRAP" "$@"
+    exec php -r "$PHP_BOOTSTRAP" -- "$@"
 fi
 
 if command -v docker >/dev/null 2>&1; then
     APP_CONTAINER_ID=$(docker compose ps -q app 2>/dev/null || true)
 
     if [ -n "$APP_CONTAINER_ID" ]; then
-        exec docker compose exec --user "$DOCKER_USER" -e MYXA_CLI_BASE_PATH=/var/www/html app php -r "$PHP_BOOTSTRAP" "$@"
+        exec docker compose exec --user "$DOCKER_USER" -e MYXA_CLI_BASE_PATH=/var/www/html app php -r "$PHP_BOOTSTRAP" -- "$@"
     fi
 fi
 
 if command -v php >/dev/null 2>&1; then
     export MYXA_CLI_BASE_PATH="$SCRIPT_DIR"
-    exec php -r "$PHP_BOOTSTRAP" "$@"
+    exec php -r "$PHP_BOOTSTRAP" -- "$@"
 fi
 
 if command -v docker >/dev/null 2>&1; then
-    exec docker compose run --rm --user "$DOCKER_USER" -e MYXA_CLI_BASE_PATH=/var/www/html app php -r "$PHP_BOOTSTRAP" "$@"
+    exec docker compose run --rm --user "$DOCKER_USER" -e MYXA_CLI_BASE_PATH=/var/www/html app php -r "$PHP_BOOTSTRAP" -- "$@"
 fi
 
 printf '%s\n' 'Unable to run myxa: neither Docker nor PHP is available.' >&2
