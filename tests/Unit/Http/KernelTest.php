@@ -98,6 +98,35 @@ final class KernelTest extends TestCase
         self::assertSame('123', $response->content());
     }
 
+    public function testKernelReturnsResponseInstancesWithoutFurtherNormalization(): void
+    {
+        $response = (new Response())->text('ready', 202);
+        $kernel = $this->makeKernelWithRoute(static fn () => $response);
+
+        $resolved = $kernel->handle(new Request(server: [
+            'REQUEST_METHOD' => 'GET',
+            'REQUEST_URI' => '/test',
+        ]));
+
+        self::assertSame($response, $resolved);
+        self::assertSame(202, $resolved->statusCode());
+        self::assertSame('ready', $resolved->content());
+    }
+
+    public function testKernelNormalizesArrayResponsesToJsonForBrowserRequests(): void
+    {
+        $kernel = $this->makeKernelWithRoute(static fn (): array => ['ok' => true, 'count' => 2]);
+
+        $response = $kernel->handle(new Request(server: [
+            'REQUEST_METHOD' => 'GET',
+            'REQUEST_URI' => '/test',
+        ]));
+
+        self::assertSame(200, $response->statusCode());
+        self::assertSame('application/json; charset=UTF-8', $response->header('Content-Type'));
+        self::assertSame('{"ok":true,"count":2}', $response->content());
+    }
+
     public function testKernelRendersReportFailureInsteadOfOriginalException(): void
     {
         $handler = new class implements ExceptionHandlerInterface {
@@ -144,6 +173,39 @@ final class KernelTest extends TestCase
 
         $kernel = $this->makeKernelWithRoute(
             static fn (): never => throw new \RuntimeException('boom'),
+            $handler,
+        );
+
+        $response = $kernel->handle(new Request(server: [
+            'REQUEST_METHOD' => 'GET',
+            'REQUEST_URI' => '/test',
+            'HTTP_ACCEPT' => 'application/json',
+        ]));
+
+        self::assertSame(500, $response->statusCode());
+        self::assertSame('application/json; charset=UTF-8', $response->header('Content-Type'));
+        self::assertSame(
+            '{"error":{"type":"server_error","message":"Server Error","status":500}}',
+            $response->content(),
+        );
+    }
+
+    public function testKernelFallsBackToEmergencyResponseWhenReportAndRenderBothFail(): void
+    {
+        $handler = new class implements ExceptionHandlerInterface {
+            public function report(Throwable $exception): void
+            {
+                throw new \RuntimeException('report failed');
+            }
+
+            public function render(Throwable $exception, Request $request): Response
+            {
+                throw new \RuntimeException('render after report failed');
+            }
+        };
+
+        $kernel = $this->makeKernelWithRoute(
+            static fn (): never => throw new \InvalidArgumentException('original failure'),
             $handler,
         );
 
@@ -225,6 +287,22 @@ final class KernelTest extends TestCase
         } finally {
             $maintenance->disable();
         }
+    }
+
+    public function testKernelUsesTheContainerRequestWhenNoExplicitRequestIsProvided(): void
+    {
+        $app = new Application();
+        $router = new Router($app);
+        $router->get('/test', static fn (): string => 'implicit-request');
+        $app->instance(Request::class, new Request(server: [
+            'REQUEST_METHOD' => 'GET',
+            'REQUEST_URI' => '/test',
+        ]));
+
+        $response = (new Kernel($app))->handle();
+
+        self::assertSame(200, $response->statusCode());
+        self::assertSame('implicit-request', $response->content());
     }
 
     private function makeKernelWithRoute(callable $handler, ?ExceptionHandlerInterface $exceptionHandler = null): Kernel

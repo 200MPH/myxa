@@ -271,6 +271,32 @@ final class RouteCommandsTest extends TestCase
         $maintenance->disable();
     }
 
+    public function testConsoleKernelWritesMaintenanceMessageWhenNotQuiet(): void
+    {
+        $app = ApplicationFactory::create(base_path());
+        $maintenance = $app->make(MaintenanceMode::class);
+        $maintenance->enable('phpunit');
+
+        try {
+            $exitCode = $app->make(Kernel::class)->handle(['myxa', 'route:clear']);
+
+            self::assertSame(1, $exitCode);
+        } finally {
+            $maintenance->disable();
+        }
+    }
+
+    public function testConsoleKernelTracksAndCompletesNonBypassedCommands(): void
+    {
+        $app = ApplicationFactory::create(base_path());
+        $maintenance = $app->make(MaintenanceMode::class);
+
+        $exitCode = $app->make(Kernel::class)->handle(['myxa', 'cache:clear', '--quiet']);
+
+        self::assertSame(0, $exitCode);
+        self::assertSame(0, $maintenance->activeConsoleCommandCount());
+    }
+
     public function testConsoleKernelHelperMethodsParseContextAndMatchWildcardAllowList(): void
     {
         $app = ApplicationFactory::create(base_path());
@@ -293,6 +319,28 @@ final class RouteCommandsTest extends TestCase
         self::assertTrue($matchesPattern->invoke($kernel, 'cache:forget', 'cache:*'));
         self::assertFalse($matchesPattern->invoke($kernel, 'route:clear', 'cache:*'));
         self::assertTrue($allowList->invoke($kernel, 'cache:clear'));
+    }
+
+    public function testConsoleKernelBypassAndAllowListHelpersHandleSpecialCases(): void
+    {
+        $app = ApplicationFactory::create(base_path());
+        $kernel = $app->make(Kernel::class);
+
+        $bypass = new \ReflectionMethod(Kernel::class, 'shouldBypassMaintenanceLock');
+        $bypass->setAccessible(true);
+        $matchesPattern = new \ReflectionMethod(Kernel::class, 'commandMatchesPattern');
+        $matchesPattern->setAccessible(true);
+        $allowList = new \ReflectionMethod(Kernel::class, 'matchesMaintenanceAllowList');
+        $allowList->setAccessible(true);
+
+        self::assertTrue($bypass->invoke($kernel, null, false, false));
+        self::assertTrue($bypass->invoke($kernel, 'list', false, false));
+        self::assertTrue($bypass->invoke($kernel, 'help', false, false));
+        self::assertTrue($bypass->invoke($kernel, 'version:sync', false, false));
+        self::assertFalse($matchesPattern->invoke($kernel, 'cache:clear', 'cache:clearer'));
+
+        $app->make(ConfigRepository::class)->set('maintenance.allowed_commands', 'invalid');
+        self::assertFalse($allowList->invoke($kernel, 'cache:clear'));
     }
 
     public function testConsoleKernelAllowsConfiguredMaintenanceExceptionCommands(): void

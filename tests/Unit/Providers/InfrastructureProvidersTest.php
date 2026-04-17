@@ -6,7 +6,9 @@ namespace Test\Unit\Providers;
 
 use App\Config\ConfigRepository;
 use App\Auth\SessionStoreInterface;
+use App\Auth\Stores\DatabaseSessionStore;
 use App\Auth\Stores\FileSessionStore;
+use App\Auth\Stores\RedisSessionStore;
 use App\RateLimit\RedisRateLimiterStore;
 use App\Providers\CacheServiceProvider;
 use App\Providers\ConfigServiceProvider;
@@ -421,6 +423,68 @@ PHP);
         self::assertInstanceOf(SessionStoreInterface::class, $app->make(SessionStoreInterface::class));
         self::assertInstanceOf(FileSessionStore::class, $app->make(SessionStoreInterface::class));
         self::assertSame($app->make(AuthManager::class), $app->make('auth'));
+    }
+
+    public function testAuthProviderRejectsUnsupportedSessionDrivers(): void
+    {
+        $app = new Application();
+        $app->instance(ConfigRepository::class, new ConfigRepository([
+            'auth' => [
+                'session' => [
+                    'driver' => 'unsupported',
+                ],
+            ],
+        ]));
+
+        $provider = new AuthServiceProvider();
+        $provider->setApplication($app);
+        $provider->register();
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Unsupported auth session driver [unsupported].');
+
+        $app->make(SessionStoreInterface::class);
+    }
+
+    public function testAuthProviderCanResolveDatabaseAndRedisSessionStores(): void
+    {
+        $databaseApp = new Application();
+        $databaseApp->instance(ConfigRepository::class, new ConfigRepository([
+            'auth' => [
+                'session' => [
+                    'driver' => 'database',
+                ],
+            ],
+        ]));
+
+        $databaseProvider = new AuthServiceProvider();
+        $databaseProvider->setApplication($databaseApp);
+        $databaseProvider->register();
+
+        self::assertInstanceOf(DatabaseSessionStore::class, $databaseApp->make(SessionStoreInterface::class));
+
+        $redisApp = new Application();
+        $redisApp->instance(ConfigRepository::class, new ConfigRepository([
+            'auth' => [
+                'session' => [
+                    'driver' => 'redis',
+                    'redis' => [
+                        'connection' => 'sessions',
+                        'prefix' => 'auth-session:',
+                    ],
+                ],
+            ],
+        ]));
+        $redisApp->instance(
+            RedisManager::class,
+            new RedisManager('sessions', new RedisConnection(new InMemoryRedisStore())),
+        );
+
+        $redisProvider = new AuthServiceProvider();
+        $redisProvider->setApplication($redisApp);
+        $redisProvider->register();
+
+        self::assertInstanceOf(RedisSessionStore::class, $redisApp->make(SessionStoreInterface::class));
     }
 
     public function testRateLimitProviderDirectRegisterCreatesRedisBackedLimiter(): void

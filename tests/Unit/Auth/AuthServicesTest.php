@@ -13,6 +13,7 @@ use App\Auth\SessionManager;
 use App\Auth\SessionUserResolver;
 use App\Auth\TokenManager;
 use App\Auth\UserManager;
+use App\Auth\Stores\FileSessionStore;
 use App\Config\ConfigRepository;
 use App\Database\Migrations\MigrationConfig;
 use App\Database\Migrations\MigrationLoader;
@@ -31,6 +32,7 @@ use PDO;
 use PHPUnit\Framework\Attributes\CoversClass;
 use ReflectionProperty;
 use Test\TestCase;
+use DateTimeImmutable;
 
 #[CoversClass(AuthConfig::class)]
 #[CoversClass(AuthInstallService::class)]
@@ -378,7 +380,14 @@ final class AuthServicesTest extends TestCase
         $issuedToken = $this->tokens->issue($user);
         $issuedSession = $this->sessions->issue($user);
 
-        self::assertTrue($user->delete());
+        $pdo = $this->database->pdo($this->connection);
+        $pdo->exec('PRAGMA foreign_keys = OFF');
+        $statement = $pdo->prepare('DELETE FROM users WHERE id = :id');
+        self::assertInstanceOf(\PDOStatement::class, $statement);
+        self::assertTrue($statement->execute([
+            'id' => $user->getKey(),
+        ]));
+        $pdo->exec('PRAGMA foreign_keys = ON');
 
         $tokenResolver = new BearerTokenResolver($this->tokens, $this->users);
         $sessionResolver = new SessionUserResolver($this->sessions, $this->users);
@@ -387,8 +396,24 @@ final class AuthServicesTest extends TestCase
             server: ['HTTP_AUTHORIZATION' => 'Bearer ' . $issuedToken['plain_text_token']],
         );
 
-        self::assertNull($tokenResolver->resolve($issuedToken['plain_text_token'], $request));
-        self::assertNull($sessionResolver->resolve($issuedSession['plain_text_session'], $request));
+        $pdo->exec('PRAGMA foreign_keys = OFF');
+
+        try {
+            self::assertNull($tokenResolver->resolve($issuedToken['plain_text_token'], $request));
+            self::assertNull($sessionResolver->resolve($issuedSession['plain_text_session'], $request));
+        } finally {
+            $pdo->exec('PRAGMA foreign_keys = ON');
+        }
+    }
+
+    public function testBearerTokenResolverReturnsNullForUnknownBearerTokens(): void
+    {
+        $this->install->install(false);
+        $this->migrations->migrate($this->connection);
+
+        $tokenResolver = new BearerTokenResolver($this->tokens, $this->users);
+
+        self::assertNull($tokenResolver->resolve('missing-token', new Request()));
     }
 
     public function testSessionManagerSupportsFileDriver(): void
@@ -459,6 +484,36 @@ final class AuthServicesTest extends TestCase
         self::assertInstanceOf(\App\Models\User::class, $resolvedUser);
         self::assertNotNull($resolvedUser->currentSession());
         self::assertSame('redis', $resolvedUser->currentSession()->driver());
+    }
+
+    public function testSessionUserResolverReturnsNullWhenSessionUserCannotBeFound(): void
+    {
+        $this->install->install(false);
+        $this->migrations->migrate($this->connection);
+
+        $sessionsPath = $this->rootPath . '/sessions-missing-user';
+        mkdir($sessionsPath, 0777, true);
+
+        $store = new FileSessionStore($sessionsPath);
+        $store->issue(
+            999999,
+            'missing-user-session',
+            new DateTimeImmutable('+1 hour'),
+            new DateTimeImmutable('now'),
+        );
+
+        $sessionManager = new SessionManager(
+            $this->makeAuthConfig([
+                'driver' => 'file',
+                'path' => $sessionsPath,
+            ]),
+            $this->users,
+            $store,
+        );
+
+        $resolver = new SessionUserResolver($sessionManager, $this->users);
+
+        self::assertNull($resolver->resolve('missing-user-session', new Request()));
     }
 
     private function makeInMemoryConnection(): PdoConnection

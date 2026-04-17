@@ -7,6 +7,7 @@ namespace Test\Unit\Support;
 use App\Config\ConfigRepository;
 use App\Foundation\ApplicationFactory;
 use App\Support\Facades\Config;
+use BadMethodCallException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use Test\TestCase;
 
@@ -36,5 +37,25 @@ final class ConfigFacadeTest extends TestCase
         self::assertSame('After', Config::get('app.name'));
         self::assertSame('After', config('app.name'));
         self::assertSame(['app' => ['name' => 'After']], Config::all());
+    }
+
+    public function testConfigFacadeThrowsWhenRepositoryHasNotBeenInitialized(): void
+    {
+        Config::clearRepository();
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Config facade has not been initialized.');
+
+        Config::getRepository();
+    }
+
+    public function testConfigFacadeRejectsUnsupportedDynamicMethods(): void
+    {
+        Config::setRepository(new ConfigRepository());
+
+        $this->expectException(BadMethodCallException::class);
+        $this->expectExceptionMessage('Config facade method "missingMethod" is not supported.');
+
+        Config::__callStatic('missingMethod', []);
     }
 }
