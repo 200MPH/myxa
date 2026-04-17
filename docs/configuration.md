@@ -75,10 +75,23 @@ Use these to control:
 
 ```text
 CACHE_STORE=local
+CACHE_REDIS_CONNECTION=default
+CACHE_REDIS_PREFIX=cache:
 ROUTE_CACHE=false
 ```
 
 `CACHE_STORE` selects the default application cache store from `config/cache.php`.
+
+The cache config currently defines:
+
+- `local` -> file cache
+- `redis` -> Redis-backed cache
+
+If you want shared cache across multiple app nodes, switch:
+
+```text
+CACHE_STORE=redis
+```
 
 `ROUTE_CACHE` controls whether the app should prefer the compiled route manifest when it exists.
 

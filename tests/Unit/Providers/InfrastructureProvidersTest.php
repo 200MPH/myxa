@@ -113,6 +113,36 @@ final class InfrastructureProvidersTest extends TestCase
         }
     }
 
+    public function testCacheProviderRegistersConfiguredRedisStore(): void
+    {
+        $app = new Application();
+        $app->instance(ConfigRepository::class, new ConfigRepository([
+            'cache' => [
+                'default' => 'redis',
+                'stores' => [
+                    'redis' => [
+                        'driver' => 'redis',
+                        'connection' => 'cache',
+                        'prefix' => 'cache:test:',
+                    ],
+                ],
+            ],
+        ]));
+        $app->instance(
+            RedisManager::class,
+            new RedisManager('cache', new RedisConnection(new InMemoryRedisStore())),
+        );
+
+        $app->register(CacheServiceProvider::class);
+        $app->boot();
+
+        $manager = $app->make(CacheManager::class);
+        $manager->put('framework:redis-ping', ['ok' => true]);
+
+        self::assertSame('redis', $manager->getDefaultStore());
+        self::assertSame(['ok' => true], $manager->get('framework:redis-ping'));
+    }
+
     public function testDatabaseProviderRegistersConfiguredConnections(): void
     {
         $app = new Application();

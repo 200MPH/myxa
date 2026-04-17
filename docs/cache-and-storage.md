@@ -14,6 +14,8 @@ The default app cache store is selected by:
 
 ```text
 CACHE_STORE=local
+CACHE_REDIS_CONNECTION=default
+CACHE_REDIS_PREFIX=cache:
 ```
 
 ## Basic Cache Usage
@@ -57,7 +59,23 @@ Forget one key:
 
 `cache:clear` is a full store flush.
 
-The current skeleton only ships a `local` cache store out of the box. Add more stores in `config/cache.php` if you want separate aliases such as `redis`.
+The app now ships both:
+
+- `local` -> file cache under `storage/cache`
+- `redis` -> Redis-backed cache using the configured Redis connection
+
+For a single-node local setup, `local` is fine.
+
+For multi-node or scaled setups, switch to Redis with:
+
+```text
+CACHE_STORE=redis
+```
+
+Optional Redis cache tuning:
+
+- `CACHE_REDIS_CONNECTION`
+- `CACHE_REDIS_PREFIX`
 
 ## Route Cache
 

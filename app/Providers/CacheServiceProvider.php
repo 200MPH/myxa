@@ -7,12 +7,15 @@ namespace App\Providers;
 use App\Config\ConfigRepository;
 use Myxa\Cache\CacheServiceProvider as FrameworkCacheServiceProvider;
 use Myxa\Cache\Store\FileCacheStore;
+use Myxa\Cache\Store\RedisCacheStore;
+use Myxa\Redis\RedisManager;
 use Myxa\Support\ServiceProvider;
 
 final class CacheServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        $app = $this->app();
         $config = $this->app()->make(ConfigRepository::class);
         $stores = [];
 
@@ -22,13 +25,31 @@ final class CacheServiceProvider extends ServiceProvider
             }
 
             $driver = (string) ($storeConfiguration['driver'] ?? 'file');
-            $path = (string) ($storeConfiguration['path'] ?? '');
 
-            if ($driver !== 'file' || $path === '') {
+            if ($driver === 'file') {
+                $path = (string) ($storeConfiguration['path'] ?? '');
+                if ($path === '') {
+                    continue;
+                }
+
+                $stores[(string) $alias] = new FileCacheStore($path);
+
                 continue;
             }
 
-            $stores[(string) $alias] = new FileCacheStore($path);
+            if ($driver === 'redis') {
+                $connection = (string) ($storeConfiguration['connection'] ?? '');
+                $prefix = (string) ($storeConfiguration['prefix'] ?? 'cache:');
+
+                if ($connection === '') {
+                    continue;
+                }
+
+                $stores[(string) $alias] = static fn (): RedisCacheStore => new RedisCacheStore(
+                    $app->make(RedisManager::class)->connection($connection),
+                    $prefix,
+                );
+            }
         }
 
         $defaultStore = (string) $config->get('cache.default', array_key_first($stores) ?? 'local');
