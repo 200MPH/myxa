@@ -16,9 +16,10 @@
     <?php if ($debug): ?>
     <section class="debug">
         <strong><?= $_e($debugData['exception']) ?></strong>
-        <p><?= $_e($debugData['request']) ?></p>
-        <p><?= $_e(sprintf('%s:%s', (string) $debugData['file'], (string) $debugData['line'])) ?></p>
+        <p>Request: <?= $_e($debugData['request']) ?></p>
+        <p>File: <?= $_e(sprintf('%s:%s', (string) $debugData['file'], (string) $debugData['line'])) ?></p>
         <?php if ($debugData['message'] !== ''): ?>
+        <p>Message:</p>    
         <p><?= $_e($debugData['message']) ?></p>
         <?php endif; ?>
         <pre><?= $_e(implode("\n", $debugData['trace'])) ?></pre>
