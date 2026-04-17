@@ -9,6 +9,39 @@ This guide shows the shortest path from a fresh clone to the Myxa welcome page.
 
 You do not need PHP, MySQL, or Redis installed locally if you use the provided Docker stack.
 
+## Two Ways To Start
+
+You can begin in either of these ways:
+
+1. Clone this repository, then follow the Docker steps below.
+2. Create a fresh app with Composer, then start the Docker stack.
+
+The Docker-based runtime is the same in both cases.
+
+## Install Via Composer
+
+If you want to start from Composer instead of cloning first, create the project like this:
+
+```bash
+composer create-project 200mph/myxa my-app dev-develop
+cd my-app
+cp .env.example .env
+docker compose up --build -d
+```
+
+Then open:
+
+```text
+https://myxa.localhost
+```
+
+Notes:
+
+- this path expects Composer on your host machine
+- it also expects a host PHP version compatible with the project requirements
+- `composer create-project` already installs dependencies, so you do not need a separate `composer install` step before first boot
+- after creation, you can use the same `./myxa` workflow as a cloned checkout
+
 ## First Boot
 
 1. Copy the environment file:

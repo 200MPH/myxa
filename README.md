@@ -34,6 +34,25 @@ If you want the full command list, run:
 ./myxa
 ```
 
+## Install Via Composer
+
+If you prefer starting from Composer instead of cloning the repository first, create a new project like this:
+
+```bash
+composer create-project 200mph/myxa my-app dev-develop
+cd my-app
+cp .env.example .env
+docker compose up --build -d
+```
+
+Then open:
+
+```text
+https://myxa.localhost
+```
+
+This Composer-based path assumes your host already has Composer and a compatible PHP version available. The fuller setup notes are in [Getting Started](docs/getting-started.md).
+
 ## Common Commands
 
 ```bash
