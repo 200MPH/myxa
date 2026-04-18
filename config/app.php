@@ -23,5 +23,6 @@ return [
         App\Providers\RateLimitServiceProvider::class,
         App\Providers\AuthServiceProvider::class,
         App\Providers\RedisServiceProvider::class,
+        App\Providers\QueueServiceProvider::class,
     ],
 ];

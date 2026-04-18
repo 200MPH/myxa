@@ -16,10 +16,12 @@ use App\Providers\DatabaseServiceProvider;
 use App\Providers\EventServiceProvider;
 use App\Providers\FrameworkServiceProvider;
 use App\Providers\AuthServiceProvider;
+use App\Providers\QueueServiceProvider;
 use App\Providers\RateLimitServiceProvider;
 use App\Providers\RedisServiceProvider;
 use App\Providers\RoutesServiceProvider;
 use App\Providers\StorageServiceProvider;
+use App\Queue\InspectableQueueInterface;
 use App\Support\Facades\Config;
 use Myxa\Auth\AuthManager;
 use Myxa\Auth\BearerTokenResolverInterface;
@@ -32,6 +34,8 @@ use Myxa\Database\Model\Model;
 use Myxa\Events\EventBusInterface;
 use Myxa\Http\Request;
 use Myxa\Http\Response;
+use Myxa\Queue\QueueInterface;
+use Myxa\Queue\WorkerInterface;
 use Myxa\RateLimit\RateLimiter;
 use Myxa\RateLimit\RateLimiterStoreInterface;
 use Myxa\Redis\RedisManager;
@@ -51,6 +55,7 @@ use Test\TestCase;
 #[CoversClass(EventServiceProvider::class)]
 #[CoversClass(FrameworkServiceProvider::class)]
 #[CoversClass(AuthServiceProvider::class)]
+#[CoversClass(QueueServiceProvider::class)]
 #[CoversClass(RateLimitServiceProvider::class)]
 #[CoversClass(RedisServiceProvider::class)]
 #[CoversClass(RoutesServiceProvider::class)]
@@ -679,6 +684,77 @@ PHP);
 
         self::assertSame(1, $result->attempts);
         self::assertSame($limiter, $app->make('rate.limiter'));
+    }
+
+    public function testQueueProviderRegistersConfiguredFileQueue(): void
+    {
+        $queuePath = storage_path('framework/testing/provider-file-queue-' . uniqid('', true));
+
+        $app = new Application();
+        $app->instance(ConfigRepository::class, new ConfigRepository([
+            'queue' => [
+                'default' => 'file',
+                'default_queue' => 'default',
+                'stores' => [
+                    'file' => [
+                        'driver' => 'file',
+                        'path' => $queuePath,
+                    ],
+                ],
+                'worker' => [
+                    'sleep_seconds' => 0,
+                    'max_idle_cycles' => 1,
+                    'default_max_attempts' => 1,
+                    'backoff_seconds' => 0,
+                ],
+            ],
+        ]));
+
+        try {
+            $app->register(QueueServiceProvider::class);
+            $app->boot();
+
+            self::assertInstanceOf(InspectableQueueInterface::class, $app->make(InspectableQueueInterface::class));
+            self::assertInstanceOf(QueueInterface::class, $app->make(QueueInterface::class));
+            self::assertInstanceOf(WorkerInterface::class, $app->make(WorkerInterface::class));
+        } finally {
+            $this->removeDirectory($queuePath);
+        }
+    }
+
+    public function testQueueProviderRegistersConfiguredRedisQueue(): void
+    {
+        $app = new Application();
+        $app->instance(ConfigRepository::class, new ConfigRepository([
+            'queue' => [
+                'default' => 'redis',
+                'default_queue' => 'default',
+                'stores' => [
+                    'redis' => [
+                        'driver' => 'redis',
+                        'connection' => 'queue',
+                        'prefix' => 'queue:test:',
+                    ],
+                ],
+                'worker' => [
+                    'sleep_seconds' => 0,
+                    'max_idle_cycles' => 1,
+                    'default_max_attempts' => 1,
+                    'backoff_seconds' => 0,
+                ],
+            ],
+        ]));
+        $app->instance(
+            RedisManager::class,
+            new RedisManager('queue', new RedisConnection(new InMemoryRedisStore())),
+        );
+
+        $app->register(QueueServiceProvider::class);
+        $app->boot();
+
+        self::assertInstanceOf(InspectableQueueInterface::class, $app->make(InspectableQueueInterface::class));
+        self::assertInstanceOf(QueueInterface::class, $app->make(QueueInterface::class));
+        self::assertInstanceOf(WorkerInterface::class, $app->make(WorkerInterface::class));
     }
 
     public function testAuthProviderRegistersManagerResolversAndCustomSessionCookie(): void

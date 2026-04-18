@@ -12,12 +12,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/200MPH/myxa-framework.git",
-                "reference": "5e000bec8e9e27e6cb564c7c7843b7e91ad4200f"
+                "reference": "f97c324c5f0c769e289406fc43cec047c64802e5"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/200MPH/myxa-framework/zipball/5e000bec8e9e27e6cb564c7c7843b7e91ad4200f",
-                "reference": "5e000bec8e9e27e6cb564c7c7843b7e91ad4200f",
+                "url": "https://api.github.com/repos/200MPH/myxa-framework/zipball/f97c324c5f0c769e289406fc43cec047c64802e5",
+                "reference": "f97c324c5f0c769e289406fc43cec047c64802e5",
                 "shasum": ""
             },
             "require": {
@@ -56,7 +56,7 @@
                 "issues": "https://github.com/200MPH/myxa-framework/issues",
                 "source": "https://github.com/200MPH/myxa-framework/tree/develop"
             },
-            "time": "2026-04-11T22:15:46+00:00"
+            "time": "2026-04-18T17:03:33+00:00"
         },
         {
             "name": "psr/container",

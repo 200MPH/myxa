@@ -53,6 +53,14 @@ Examples:
 
 - `cache:clear`
 - `cache:forget`
+- `queue:failed`
+- `queue:flush-failed`
+- `queue:forget-failed`
+- `queue:prune-failed`
+- `queue:retry`
+- `queue:retry-all`
+- `queue:status`
+- `queue:work`
 - `route:cache`
 - `route:clear`
 - `storage:link`
@@ -63,9 +71,25 @@ Examples:
 ./myxa cache:clear
 ./myxa cache:forget users:123
 ./myxa cache:clear --store=local
+./myxa queue:status
+./myxa queue:work --once
+./myxa queue:retry job-123
+./myxa queue:retry-all
+./myxa queue:prune-failed --older-than=7d
 ./myxa route:cache
 ./myxa storage:link
 ```
+
+Useful queue command notes:
+
+- `queue:work --once` is handy for local debugging because it processes one job and exits
+- `queue:work <queue> --sleep=1 --max-idle=5` is a good pattern for short-lived workers
+- `queue:work <queue> --max-jobs=500` is useful when you want long-running workers to recycle periodically
+- `queue:retry <id>` retries one DLQ job
+- `queue:retry-all [queue]` retries many DLQ jobs
+- `queue:forget-failed <id>` deletes one failed job
+- `queue:flush-failed [queue]` deletes all failed jobs for that scope
+- `queue:prune-failed [queue] --older-than=7d` deletes only old failed jobs
 
 ## Scaffolding
 

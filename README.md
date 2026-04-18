@@ -1,6 +1,8 @@
 # Myxa Project
 
-This repository is the application skeleton built on top of the Myxa framework. It ships with Docker, a growing CLI, app-level providers, and examples of how to build HTTP, console, database, auth, cache, storage, event, and rate-limit features in one place.
+This repository is the application skeleton built on top of the Myxa framework. It ships with Docker, a growing CLI, app-level providers, and examples of how to build HTTP, console, database, auth, cache, storage, queue, event, and rate-limit features in one place.
+
+The developer experience is intentionally close to Laravel style, so teams coming from Laravel should feel at home quickly. The biggest differences are that the model and validator layers are leaner and a bit more explicit.
 
 ## Quick Start
 
@@ -60,6 +62,11 @@ This Composer-based path assumes your host already has Composer and a compatible
 ./myxa route:cache
 ./myxa route:clear
 ./myxa cache:clear
+./myxa queue:status
+./myxa queue:work --once
+./myxa queue:retry <id>
+./myxa queue:retry-all
+./myxa queue:prune-failed --older-than=7d
 ./myxa storage:link
 ./myxa migrate
 ```
@@ -68,6 +75,7 @@ This Composer-based path assumes your host already has Composer and a compatible
 
 - [Getting Started](docs/getting-started.md)
 - [Configuration](docs/configuration.md)
+- [Queues](docs/queues.md)
 - [Console and Scaffolding](docs/console-and-scaffolding.md)
 - [HTTP, Routing, Controllers, and Middleware](docs/http-routing.md)
 - [Database, Query Builder, Models, and Migrations](docs/database.md)

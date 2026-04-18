@@ -18,6 +18,7 @@ Current project config files:
 - `config/database.php`
 - `config/maintenance.php`
 - `config/migrations.php`
+- `config/queue.php`
 - `config/rate_limit.php`
 - `config/services.php`
 - `config/storage.php`
@@ -44,6 +45,7 @@ Important providers include:
 - `RateLimitServiceProvider`
 - `AuthServiceProvider`
 - `RedisServiceProvider`
+- `QueueServiceProvider`
 
 If you create a new provider, register it in `config/app.php`.
 
@@ -142,6 +144,45 @@ The current default connection alias is:
 - `default`
 
 If you want separate Redis connections for cache, queue-like work, or rate limiting, add them in `config/services.php`.
+
+## Queue
+
+```text
+QUEUE_CONNECTION=file
+QUEUE_NAME=default
+QUEUE_VISIBILITY_TIMEOUT=60
+QUEUE_REDIS_CONNECTION=default
+QUEUE_REDIS_PREFIX=queue:
+QUEUE_WORKER_SLEEP=3
+QUEUE_WORKER_MAX_IDLE=0
+QUEUE_WORKER_MAX_ATTEMPTS=3
+QUEUE_WORKER_BACKOFF=30
+```
+
+`config/queue.php` currently defines:
+
+- `file` -> local filesystem queue under `storage/queue`
+- `redis` -> shared Redis-backed queue
+- a visibility-timeout based reservation recovery path for crashed workers
+
+For local development or a single-node app, `file` is a good default.
+
+For scaled or multi-node deployments, switch to:
+
+```text
+QUEUE_CONNECTION=redis
+```
+
+`QUEUE_VISIBILITY_TIMEOUT` controls how long a job may stay reserved before it is considered abandoned and moved back to the ready queue.
+
+The worker-related settings map to these behaviors:
+
+- `QUEUE_WORKER_SLEEP` -> seconds to sleep after an empty queue poll
+- `QUEUE_WORKER_MAX_IDLE` -> empty-poll limit before the worker exits; `0` means keep running
+- `QUEUE_WORKER_MAX_ATTEMPTS` -> default retry limit when a job does not declare its own `maxAttempts()`
+- `QUEUE_WORKER_BACKOFF` -> base retry delay in seconds for the default retry policy
+
+The `queue:work` command can override loop behavior such as `--sleep`, `--max-jobs`, `--max-idle`, and `--once`, while retry defaults still come from config.
 
 ## Storage
 

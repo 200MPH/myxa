@@ -2,6 +2,8 @@
 
 This guide shows the shortest path from a fresh clone to the Myxa welcome page.
 
+If you already know Laravel, the project structure should feel very familiar. Service providers, commands, routing, jobs, and most day-to-day patterns are intentionally close, while the main differences are the slimmer model and validator layers.
+
 ## Requirements
 
 - Docker
