@@ -1,6 +1,6 @@
 # Getting Started
 
-This guide shows the shortest path from a fresh clone to the Myxa welcome page.
+This guide shows the shortest path from a fresh Myxa app to the welcome page.
 
 If you already know Laravel, the project structure should feel very familiar. Service providers, commands, routing, jobs, and most day-to-day patterns are intentionally close, while the main differences are the slimmer model and validator layers.
 
@@ -18,8 +18,10 @@ If your host already has PHP, Composer, MySQL, and Redis available, Docker is op
 
 You can begin in either of these ways:
 
-1. Clone the Myxa repository from `https://github.com/200MPH/myxa`, then use either the Docker or host-native setup below.
-2. Create a fresh app with Composer, then choose the same Docker or host-native runtime style.
+1. Create a fresh app with Composer, then choose either the Docker or host-native runtime style below.
+2. If you are starting from GitHub instead, create your own repository from the Myxa skeleton before you begin development.
+
+Do not treat the upstream `https://github.com/200MPH/myxa` repository as your application repository unless you are contributing to Myxa itself.
 
 ## Install Via Composer
 
@@ -43,7 +45,7 @@ Notes:
 - this path expects Composer on your host machine
 - it also expects a host PHP version compatible with the project requirements
 - `composer create-project` already installs dependencies, so you do not need a separate `composer install` step before first boot
-- after creation, you can use the same `./myxa` workflow as a cloned checkout
+- after creation, you can use the normal `./myxa` workflow in your own project repository
 
 ## First Boot With Docker
 
