@@ -31,18 +31,28 @@ final class HomeController
         $healthPath = '/health';
         $logoPreviewPath = '/logo-preview.php';
         $versionDetails = $version->details();
+        $databaseHost = $this->displayHost(
+            (string) ($dbConfig['host'] ?? 'localhost'),
+            ['db', 'mysql', 'mariadb'],
+        );
+        $databasePort = (string) env('DB_FORWARD_PORT', (string) ($dbConfig['port'] ?? '3306'));
+        $redisHost = $this->displayHost(
+            (string) ($redisConfig['host'] ?? 'localhost'),
+            ['redis'],
+        );
+        $redisPort = (string) env('REDIS_FORWARD_PORT', (string) ($redisConfig['port'] ?? '6379'));
 
         $databaseLabel = sprintf(
             '%s:%s/%s',
-            (string) ($dbConfig['host'] ?? 'localhost'),
-            (string) ($dbConfig['port'] ?? '3306'),
+            $databaseHost,
+            $databasePort,
             (string) ($dbConfig['database'] ?? 'myxa'),
         );
 
         $redisLabel = sprintf(
             '%s:%s',
-            (string) ($redisConfig['host'] ?? 'localhost'),
-            (string) ($redisConfig['port'] ?? '6379'),
+            $redisHost,
+            $redisPort,
         );
 
         return (new Response())->html($html->renderPage(
@@ -65,5 +75,15 @@ final class HomeController
                 'faviconPath' => $faviconPath,
             ],
         ));
+    }
+
+    /**
+     * @param list<string> $containerHosts
+     */
+    private function displayHost(string $host, array $containerHosts): string
+    {
+        $normalized = strtolower(trim($host));
+
+        return in_array($normalized, $containerHosts, true) ? 'localhost' : $host;
     }
 }

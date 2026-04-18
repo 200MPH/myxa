@@ -1,6 +1,6 @@
 # Myxa Project
 
-This repository is the application skeleton built on top of the Myxa framework. It ships with Docker, a growing CLI, app-level providers, and examples of how to build HTTP, console, database, auth, cache, storage, queue, event, and rate-limit features in one place.
+This repository is the application skeleton built on top of the Myxa framework. Myxa is a lightweight PHP framework powered by AI, and this project ships with Docker, a growing CLI, app-level providers, and examples of how to build HTTP, console, database, auth, cache, storage, queue, event, and rate-limit features in one place.
 
 The developer experience is intentionally close to Laravel style, so teams coming from Laravel should feel at home quickly. The biggest differences are that the model and validator layers are leaner and a bit more explicit.
 

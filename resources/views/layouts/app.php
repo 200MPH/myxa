@@ -52,6 +52,12 @@
             gap: 1.5rem;
         }
 
+        .hero-brand {
+            display: grid;
+            gap: 1rem;
+            justify-items: start;
+        }
+
         .eyebrow {
             display: inline-flex;
             align-items: center;
@@ -73,7 +79,8 @@
         .logo-card {
             position: relative;
             overflow: hidden;
-            padding: clamp(1rem, 3vw, 1.5rem);
+            width: min(100%, 360px);
+            padding: clamp(0.85rem, 2.5vw, 1.25rem);
             border-radius: 24px;
             background: var(--surface-light);
             border: 1px solid rgba(255, 255, 255, 0.75);
@@ -95,7 +102,7 @@
 
         .logo {
             display: block;
-            width: min(100%, 460px);
+            width: min(100%, 300px);
             margin: 0 auto;
             filter:
                 drop-shadow(0 18px 30px rgba(15, 23, 42, 0.16))
@@ -126,6 +133,10 @@
             gap: 1rem;
         }
 
+        .hero-copy {
+            max-width: 42rem;
+        }
+
         ul {
             display: grid;
             gap: 0.85rem;
@@ -154,8 +165,8 @@
 
         @media (min-width: 860px) {
             .hero-shell {
-                grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
-                align-items: center;
+                grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+                align-items: start;
             }
         }
     </style>
