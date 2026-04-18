@@ -174,6 +174,41 @@ Generate auth migrations:
 ./myxa migrate
 ```
 
+## Facades
+
+Myxa supports Laravel-style facades for common framework services.
+
+You will see them throughout the docs in examples such as:
+
+- `Route`
+- `DB`
+- `Cache`
+- `Storage`
+- `Redis`
+- `Event`
+- `Validator`
+
+Example:
+
+```php
+use Myxa\Support\Facades\Route;
+use Myxa\Support\Facades\Validator;
+
+Route::get('/health', [HealthController::class, 'show']);
+
+$validator = Validator::make([
+    'email' => 'jane@example.com',
+]);
+```
+
+Mental model:
+
+- facades are a convenient static API
+- under the hood they still resolve real services from the container
+- if you prefer constructor injection, you can still inject the underlying service classes directly
+
+So the style is very close to Laravel, but you are not forced into facades everywhere.
+
 ## Day-to-Day Development
 
 The recommended loop is:
