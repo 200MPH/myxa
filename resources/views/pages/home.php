@@ -38,6 +38,7 @@
                 </li>
                 <li>
                     <strong>Useful links</strong>
+                    <a href="<?= $_e($docsPath) ?>">Documentation</a><br>
                     <a href="<?= $_e($healthPath) ?>">Health endpoint</a>
                 </li>
             </ul>

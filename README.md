@@ -76,11 +76,11 @@ This Composer-based path assumes your host already has Composer and a compatible
 
 - [Getting Started](docs/getting-started.md)
 - [Configuration](docs/configuration.md)
-- [Queues](docs/queues.md)
-- [Frontend](docs/frontend.md)
 - [Console and Scaffolding](docs/console-and-scaffolding.md)
 - [HTTP, Routing, Controllers, and Middleware](docs/http-routing.md)
 - [Database, Query Builder, Models, and Migrations](docs/database.md)
+- [Frontend](docs/frontend.md)
+- [Queues](docs/queues.md)
 - [Events, Listeners, and Services](docs/events-and-services.md)
 - [Cache and Storage](docs/cache-and-storage.md)
 

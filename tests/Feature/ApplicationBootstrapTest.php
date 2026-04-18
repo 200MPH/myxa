@@ -54,8 +54,19 @@ final class ApplicationBootstrapTest extends TestCase
         self::assertSame(200, $homeResponse->statusCode());
         self::assertSame('text/html; charset=UTF-8', $homeResponse->header('Content-Type'));
         self::assertStringContainsString('Myxa App is running :-)', $homeResponse->content());
+        self::assertStringContainsString('Documentation', $homeResponse->content());
         self::assertStringContainsString('Version', $homeResponse->content());
         self::assertStringContainsString('Health endpoint', $homeResponse->content());
+
+        $docsResponse = $kernel->handle(new Request(server: [
+            'REQUEST_METHOD' => 'GET',
+            'REQUEST_URI' => '/docs',
+        ]));
+
+        self::assertSame(200, $docsResponse->statusCode());
+        self::assertSame('text/html; charset=UTF-8', $docsResponse->header('Content-Type'));
+        self::assertStringContainsString('Documentation', $docsResponse->content());
+        self::assertStringContainsString('Getting Started', $docsResponse->content());
     }
 
     public function testConsoleBootstrapReturnsConsoleKernel(): void

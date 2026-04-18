@@ -28,6 +28,7 @@ final class HomeController
 
         $logoPath = '/assets/images/myxa-logo.svg';
         $faviconPath = '/assets/images/myxa-mark.svg';
+        $docsPath = '/docs';
         $healthPath = '/health';
         $logoPreviewPath = '/logo-preview.php';
         $versionDetails = $version->details();
@@ -64,6 +65,7 @@ final class HomeController
                 'appVersion' => $versionDetails['version'],
                 'databaseLabel' => $databaseLabel,
                 'redisLabel' => $redisLabel,
+                'docsPath' => $docsPath,
                 'logoPath' => $logoPath,
                 'healthPath' => $healthPath,
                 'logoPreviewPath' => $logoPreviewPath,
