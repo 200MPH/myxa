@@ -1,0 +1,7 @@
+.git
+.codex
+.env
+vendor
+storage/cache
+storage/logs
+storage/sessions

@@ -1,0 +1,98 @@
+<svg width="760" height="240" viewBox="0 0 760 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="myxa-edge" x1="30" y1="18" x2="186" y2="188" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#22D3EE"/>
+      <stop offset="0.48" stop-color="#14B8A6"/>
+      <stop offset="1" stop-color="#A3E635"/>
+    </linearGradient>
+    <linearGradient id="myxa-shell" x1="56" y1="44" x2="146" y2="160" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F8FAFC" stop-opacity="0.96"/>
+      <stop offset="1" stop-color="#DDEAF6" stop-opacity="0.92"/>
+    </linearGradient>
+    <radialGradient id="myxa-halo" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(104 98) rotate(90) scale(104 104)">
+      <stop stop-color="#67E8F9" stop-opacity="0.32"/>
+      <stop offset="0.55" stop-color="#2DD4BF" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#A3E635" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="myxa-soft-shadow" x="0" y="0" width="220" height="220" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="18" stdDeviation="14" flood-color="#0F172A" flood-opacity="0.16"/>
+      <feDropShadow dx="0" dy="0" stdDeviation="12" flood-color="#14B8A6" flood-opacity="0.14"/>
+    </filter>
+    <filter id="myxa-wordmark-shadow" x="210" y="36" width="500" height="170" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="6" stdDeviation="9" flood-color="#0F172A" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#myxa-soft-shadow)" transform="translate(20 18)">
+    <circle cx="104" cy="104" r="92" fill="url(#myxa-halo)"/>
+    <path
+      d="M104 16L176 58V142L104 184L32 142V58L104 16Z"
+      fill="url(#myxa-shell)"
+      stroke="url(#myxa-edge)"
+      stroke-width="10"
+      stroke-linejoin="round"
+    />
+    <path
+      d="M104 34L158 66V134L104 166L50 134V66L104 34Z"
+      fill="#F8FAFC"
+      fill-opacity="0.56"
+      stroke="#E2E8F0"
+      stroke-opacity="0.72"
+      stroke-width="2.5"
+      stroke-linejoin="round"
+    />
+    <path
+      d="M104 56V146M104 86L70 106M104 86L138 106M104 116L72 136M104 116L136 136M104 116L104 146"
+      stroke="url(#myxa-edge)"
+      stroke-width="9"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+    <path
+      d="M104 58L122 76M104 58L86 76"
+      stroke="#22D3EE"
+      stroke-opacity="0.75"
+      stroke-width="4.5"
+      stroke-linecap="round"
+    />
+    <circle cx="104" cy="56" r="13" fill="#03111E" stroke="#D9F99D" stroke-width="4"/>
+    <circle cx="104" cy="86" r="9" fill="#03111E" stroke="#5EEAD4" stroke-width="3.5"/>
+    <circle cx="70" cy="106" r="8.5" fill="#03111E" stroke="#67E8F9" stroke-width="3.5"/>
+    <circle cx="138" cy="106" r="8.5" fill="#03111E" stroke="#67E8F9" stroke-width="3.5"/>
+    <circle cx="72" cy="136" r="8.5" fill="#03111E" stroke="#A3E635" stroke-width="3.5"/>
+    <circle cx="104" cy="146" r="8.5" fill="#03111E" stroke="#A3E635" stroke-width="3.5"/>
+    <circle cx="136" cy="136" r="8.5" fill="#03111E" stroke="#A3E635" stroke-width="3.5"/>
+  </g>
+
+  <g filter="url(#myxa-wordmark-shadow)">
+    <text
+      x="244"
+      y="118"
+      fill="#08111D"
+      font-family="'Avenir Next', 'Trebuchet MS', 'Segoe UI', sans-serif"
+      font-size="106"
+      font-weight="800"
+      letter-spacing="2"
+    >
+      myxa
+    </text>
+    <path
+      d="M248 142C330 134 430 132 548 141"
+      stroke="url(#myxa-edge)"
+      stroke-width="6"
+      stroke-linecap="round"
+      opacity="0.95"
+    />
+    <text
+      x="248"
+      y="178"
+      fill="#516173"
+      font-family="'Avenir Next', 'Trebuchet MS', 'Segoe UI', sans-serif"
+      font-size="20"
+      font-weight="700"
+      letter-spacing="7"
+    >
+      ROOTED FOR FAST PHP
+    </text>
+  </g>
+</svg>

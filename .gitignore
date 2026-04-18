@@ -1,0 +1,11 @@
+.env
+.codex
+node_modules
+vendor
+build
+version.json
+storage/logs/*
+storage/maintenance/*
+storage/sessions/*
+storage/cache/framework/*
+.phpunit.result.cache

@@ -1,0 +1,9 @@
+parameters:
+    level: 5
+    paths:
+        - app
+        - bootstrap
+        - config
+        - public
+        - routes
+        - tests
