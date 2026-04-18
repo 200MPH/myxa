@@ -74,6 +74,17 @@ Important providers include:
 
 If you create a new provider, register it in `config/app.php`.
 
+## Facades and The Container
+
+The project supports Laravel-style facades for common services such as routing, database, cache, storage, Redis, events, and validation.
+
+That means both styles are valid:
+
+- facade-first usage in controllers, routes, and small app code
+- constructor injection when you want explicit dependencies
+
+In practice, the facades are thin convenience layers over container-managed services, not a separate system.
+
 ## Main Environment Variables
 
 ## App and HTTP

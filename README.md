@@ -42,7 +42,7 @@ If you want a host-native setup instead, see [Getting Started](docs/getting-star
 
 ## Install Via Composer
 
-If you prefer starting from Composer instead of cloning the repository first, create a new project like this:
+The recommended way to start your own app is Composer:
 
 ```bash
 composer create-project 200mph/myxa my-app dev-develop
@@ -57,7 +57,11 @@ Then open:
 https://myxa.localhost
 ```
 
-This Composer-based path assumes your host already has Composer and a compatible PHP version available. The fuller setup notes are in [Getting Started](docs/getting-started.md).
+This Composer-based path assumes your host already has Composer and a compatible PHP version available.
+
+If you start from GitHub instead, create your own repository from the skeleton first. Avoid building your application directly in the upstream `200MPH/myxa` repository unless you are contributing to Myxa itself.
+
+The fuller setup notes are in [Getting Started](docs/getting-started.md).
 
 ## Common Commands
 

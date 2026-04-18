@@ -95,6 +95,58 @@ The `min()` and `max()` meaning depends on the value type:
 - arrays use item count
 - numeric values use the numeric value itself
 
+## Nested Fields and Array Items
+
+The validator now supports nested array validation through field segments.
+
+In app code, that means:
+
+- use dot paths for nested fields such as `user.email`
+- use `*` wildcards for array items such as `user.roles.*`
+
+Example:
+
+```php
+$validator = Validator::make([
+    'user' => [
+        'name' => 'Jane',
+        'email' => 'jane@example.com',
+        'roles' => ['admin', 'editor'],
+    ],
+]);
+
+$validator->field('user.name')->required()->string()->min(2)->max(50);
+$validator->field('user.email')->required()->string()->email()->max(255);
+$validator->field('user.roles')->required()->array()->min(1);
+$validator->field('user.roles.*')->required()->string()->min(3);
+
+$validated = $validator->validate();
+```
+
+The validated output keeps the nested shape:
+
+```php
+[
+    'user' => [
+        'name' => 'Jane',
+        'email' => 'jane@example.com',
+        'roles' => ['admin', 'editor'],
+    ],
+]
+```
+
+When wildcard validation fails, the error keys point to the concrete array item:
+
+```php
+[
+    'user.roles.1' => [
+        'The user.roles.1 field must be a string.',
+    ],
+]
+```
+
+That makes nested request payloads much more practical to validate without flattening the input first.
+
 ## Exists Validation
 
 `exists()` can validate against several sources:
@@ -165,6 +217,8 @@ Result:
 ]
 ```
 
+Nested configured fields are rebuilt into nested validated output rather than returned as flat dot-key arrays.
+
 ## Error Format
 
 `errors()` returns field-grouped messages:
@@ -198,6 +252,7 @@ Use `validate()` when:
 If you come from Laravel, the closest translation is:
 
 - Laravel rule strings -> Myxa fluent field chains
+- Laravel nested rule keys like `user.email` or `tags.*` -> the same dot-path style in Myxa
 - Laravel `validated()` -> Myxa `validated()` or `validate()`
 - Laravel form requests -> explicit validator setup inside your action or service
 

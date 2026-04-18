@@ -1,6 +1,6 @@
 # Getting Started
 
-This guide shows the shortest path from a fresh clone to the Myxa welcome page.
+This guide shows the shortest path from a fresh Myxa app to the welcome page.
 
 If you already know Laravel, the project structure should feel very familiar. Service providers, commands, routing, jobs, and most day-to-day patterns are intentionally close, while the main differences are the slimmer model and validator layers.
 
@@ -18,8 +18,10 @@ If your host already has PHP, Composer, MySQL, and Redis available, Docker is op
 
 You can begin in either of these ways:
 
-1. Clone the Myxa repository from `https://github.com/200MPH/myxa`, then use either the Docker or host-native setup below.
-2. Create a fresh app with Composer, then choose the same Docker or host-native runtime style.
+1. Create a fresh app with Composer, then choose either the Docker or host-native runtime style below.
+2. If you are starting from GitHub instead, create your own repository from the Myxa skeleton before you begin development.
+
+Do not treat the upstream `https://github.com/200MPH/myxa` repository as your application repository unless you are contributing to Myxa itself.
 
 ## Install Via Composer
 
@@ -43,7 +45,7 @@ Notes:
 - this path expects Composer on your host machine
 - it also expects a host PHP version compatible with the project requirements
 - `composer create-project` already installs dependencies, so you do not need a separate `composer install` step before first boot
-- after creation, you can use the same `./myxa` workflow as a cloned checkout
+- after creation, you can use the normal `./myxa` workflow in your own project repository
 
 ## First Boot With Docker
 
@@ -173,6 +175,41 @@ Generate auth migrations:
 ./myxa auth:install
 ./myxa migrate
 ```
+
+## Facades
+
+Myxa supports Laravel-style facades for common framework services.
+
+You will see them throughout the docs in examples such as:
+
+- `Route`
+- `DB`
+- `Cache`
+- `Storage`
+- `Redis`
+- `Event`
+- `Validator`
+
+Example:
+
+```php
+use Myxa\Support\Facades\Route;
+use Myxa\Support\Facades\Validator;
+
+Route::get('/health', [HealthController::class, 'show']);
+
+$validator = Validator::make([
+    'email' => 'jane@example.com',
+]);
+```
+
+Mental model:
+
+- facades are a convenient static API
+- under the hood they still resolve real services from the container
+- if you prefer constructor injection, you can still inject the underlying service classes directly
+
+So the style is very close to Laravel, but you are not forced into facades everywhere.
 
 ## Day-to-Day Development
 
