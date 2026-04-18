@@ -188,6 +188,13 @@ The `queue:work` command can override loop behavior such as `--sleep`, `--max-jo
 
 ```text
 STORAGE_DISK=local
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+AWS_DEFAULT_REGION=us-east-1
+AWS_BUCKET=
+AWS_ENDPOINT=
+AWS_SESSION_TOKEN=
+AWS_USE_PATH_STYLE_ENDPOINT=false
 ```
 
 `config/storage.php` currently defines:
@@ -195,11 +202,13 @@ STORAGE_DISK=local
 - `local` -> `storage/app`
 - `public` -> `storage/app/public`
 - `db` -> database-backed storage
+- `s3` -> S3-compatible object storage
 
 Use:
 
 - `local` for private/internal files
 - `public` for web-exposed files
+- `s3` for shared or cloud-backed files across multiple nodes
 
 ## Rate Limiting
 

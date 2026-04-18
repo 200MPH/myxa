@@ -42,6 +42,7 @@ use Myxa\Redis\RedisManager;
 use Myxa\Redis\Connection\InMemoryRedisStore;
 use Myxa\Redis\Connection\RedisConnection;
 use Myxa\Routing\Router;
+use Myxa\Storage\S3\S3Storage;
 use Myxa\Storage\StorageManager;
 use Myxa\Support\Facades\DB;
 use Myxa\Support\Facades\Redis;
@@ -595,6 +596,37 @@ PHP);
         self::assertSame('db', $disk->alias());
     }
 
+    public function testStorageProviderRegistersConfiguredS3Disk(): void
+    {
+        $app = new Application();
+        $app->instance(ConfigRepository::class, new ConfigRepository([
+            'storage' => [
+                'default' => 's3',
+                'disks' => [
+                    's3' => [
+                        'driver' => 's3',
+                        'bucket' => 'myxa-files',
+                        'region' => 'eu-central-1',
+                        'access_key' => 'access-key',
+                        'secret_key' => 'secret-key',
+                        'endpoint' => 'http://minio:9000',
+                        'path_style' => true,
+                    ],
+                ],
+            ],
+        ]));
+
+        $app->register(StorageServiceProvider::class);
+        $app->boot();
+
+        $manager = $app->make(StorageManager::class);
+        $disk = $manager->storage('s3');
+
+        self::assertSame('s3', $manager->getDefaultStorage());
+        self::assertInstanceOf(S3Storage::class, $disk);
+        self::assertSame('s3', $disk->alias());
+    }
+
     public function testStorageProviderSkipsBindingWhenNoSupportedDisksExist(): void
     {
         $app = new Application();
@@ -606,7 +638,7 @@ PHP);
                         'root' => '',
                     ],
                     'unknown' => [
-                        'driver' => 's3',
+                        'driver' => 'unsupported',
                     ],
                 ],
             ],

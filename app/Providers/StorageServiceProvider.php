@@ -8,6 +8,7 @@ use App\Config\ConfigRepository;
 use Myxa\Database\DatabaseManager;
 use Myxa\Storage\Db\DatabaseStorage;
 use Myxa\Storage\Local\LocalStorage;
+use Myxa\Storage\S3\S3Storage;
 use Myxa\Storage\StorageInterface;
 use Myxa\Storage\StorageServiceProvider as FrameworkStorageServiceProvider;
 use Myxa\Support\ServiceProvider;
@@ -59,6 +60,7 @@ final class StorageServiceProvider extends ServiceProvider
         return match ($driver) {
             'local' => $this->makeLocalDisk($alias, $diskConfiguration),
             'database', 'db' => $this->makeDatabaseDisk($alias, $diskConfiguration),
+            's3' => $this->makeS3Disk($alias, $diskConfiguration),
             default => null,
         };
     }
@@ -94,5 +96,44 @@ final class StorageServiceProvider extends ServiceProvider
                 alias: $alias,
             );
         };
+    }
+
+    /**
+     * @param array<string, mixed> $diskConfiguration
+     */
+    private function makeS3Disk(string $alias, array $diskConfiguration): ?StorageInterface
+    {
+        $bucket = (string) ($diskConfiguration['bucket'] ?? '');
+        $region = (string) ($diskConfiguration['region'] ?? '');
+        $accessKey = (string) ($diskConfiguration['access_key'] ?? '');
+        $secretKey = (string) ($diskConfiguration['secret_key'] ?? '');
+
+        if ($bucket === '' || $region === '' || $accessKey === '' || $secretKey === '') {
+            return null;
+        }
+
+        $sessionToken = $this->nullableString($diskConfiguration['session_token'] ?? null);
+        $endpoint = $this->nullableString($diskConfiguration['endpoint'] ?? null);
+        $pathStyle = (bool) ($diskConfiguration['path_style'] ?? false);
+
+        return new S3Storage(
+            bucket: $bucket,
+            region: $region,
+            accessKey: $accessKey,
+            secretKey: $secretKey,
+            sessionToken: $sessionToken,
+            endpoint: $endpoint,
+            pathStyle: $pathStyle,
+            alias: $alias,
+        );
+    }
+
+    private function nullableString(mixed $value): ?string
+    {
+        if (!is_string($value) || trim($value) === '') {
+            return null;
+        }
+
+        return trim($value);
     }
 }

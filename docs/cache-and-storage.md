@@ -108,12 +108,27 @@ Current disks:
 - `local` -> `storage/app`
 - `public` -> `storage/app/public`
 - `db` -> database-backed storage
+- `s3` -> S3-compatible object storage
 
 The default disk is selected by:
 
 ```text
 STORAGE_DISK=local
 ```
+
+S3 uses Laravel-familiar environment variables:
+
+```text
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+AWS_DEFAULT_REGION=us-east-1
+AWS_BUCKET=
+AWS_ENDPOINT=
+AWS_SESSION_TOKEN=
+AWS_USE_PATH_STYLE_ENDPOINT=false
+```
+
+`AWS_ENDPOINT` and `AWS_USE_PATH_STYLE_ENDPOINT=true` are especially useful for MinIO or other S3-compatible local/dev services.
 
 ## Local vs Public
 
@@ -241,6 +256,7 @@ The current framework already ships:
 
 - local storage
 - database storage
+- S3-compatible storage
 
 ## Notes
 
