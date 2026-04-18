@@ -99,7 +99,10 @@ final class MigrationWorkflowTest extends TestCase
         $applied = $this->manager->migrate($this->connection);
 
         self::assertCount(1, $applied);
-        self::assertSame(['migrations', 'posts'], $this->database->schema($this->connection)->reverseEngineer()->tables());
+        self::assertSame(
+            ['migrations', 'posts'],
+            $this->database->schema($this->connection)->reverseEngineer()->tables(),
+        );
 
         $rolledBack = $this->manager->rollback(1, $this->connection);
 

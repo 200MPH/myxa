@@ -363,8 +363,10 @@ final class RedisQueue implements InspectableQueueInterface
     {
         $now = time();
 
-        if ($this->nativeClient() instanceof \Redis) {
-            $ids = $this->nativeClient()->zRangeByScore($this->delayedKey($queue), '-inf', (string) $now);
+        $client = $this->nativeClient();
+
+        if ($client instanceof \Redis) {
+            $ids = $client->zRangeByScore($this->delayedKey($queue), '-inf', (string) $now);
             if (!is_array($ids)) {
                 return;
             }
@@ -374,8 +376,8 @@ final class RedisQueue implements InspectableQueueInterface
                     continue;
                 }
 
-                if ($this->nativeClient()->zRem($this->delayedKey($queue), $id) > 0) {
-                    $this->nativeClient()->rPush($this->readyKey($queue), $id);
+                if ((int) $client->zRem($this->delayedKey($queue), $id) > 0) {
+                    $client->rPush($this->readyKey($queue), $id);
                 }
             }
 
@@ -385,7 +387,7 @@ final class RedisQueue implements InspectableQueueInterface
         $values = $this->readJsonMap($this->delayedKey($queue));
 
         foreach ($values as $id => $availableAt) {
-            if (!is_string($id) || !is_numeric($availableAt) || (int) $availableAt > $now) {
+            if (!is_string($id) || $availableAt > $now) {
                 continue;
             }
 
@@ -414,8 +416,10 @@ final class RedisQueue implements InspectableQueueInterface
         $cutoff = time() - $this->visibilityTimeoutSeconds;
         $recovered = 0;
 
-        if ($this->nativeClient() instanceof \Redis) {
-            $ids = $this->nativeClient()->zRangeByScore($this->reservedKey($queue), '-inf', (string) $cutoff);
+        $client = $this->nativeClient();
+
+        if ($client instanceof \Redis) {
+            $ids = $client->zRangeByScore($this->reservedKey($queue), '-inf', (string) $cutoff);
             if (!is_array($ids)) {
                 return 0;
             }
@@ -425,8 +429,8 @@ final class RedisQueue implements InspectableQueueInterface
                     continue;
                 }
 
-                if ($this->nativeClient()->zRem($this->reservedKey($queue), $id) > 0) {
-                    $this->nativeClient()->rPush($this->readyKey($queue), $id);
+                if ((int) $client->zRem($this->reservedKey($queue), $id) > 0) {
+                    $client->rPush($this->readyKey($queue), $id);
                     $recovered++;
                 }
             }

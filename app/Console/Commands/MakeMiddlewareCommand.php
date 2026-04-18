@@ -30,7 +30,10 @@ final class MakeMiddlewareCommand extends Command
     public function parameters(): array
     {
         return [
-            new InputArgument('name', 'Middleware class name, for example EnsureTenantMiddleware or Admin\\EnsureTenantMiddleware.'),
+            new InputArgument(
+                'name',
+                'Middleware class name, for example EnsureTenantMiddleware or Admin\\EnsureTenantMiddleware.',
+            ),
         ];
     }
 

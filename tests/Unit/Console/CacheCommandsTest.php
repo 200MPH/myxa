@@ -194,8 +194,7 @@ final class CacheCommandsTest extends TestCase
         string $name,
         array $parameters = [],
         array $options = [],
-    ): array
-    {
+    ): array {
         $stream = fopen('php://temp', 'w+b');
         self::assertIsResource($stream);
 

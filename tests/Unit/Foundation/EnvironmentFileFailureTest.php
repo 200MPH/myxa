@@ -51,7 +51,10 @@ namespace Test\Unit\Foundation {
 
             $environmentFile = $this->environmentFile;
 
-            $GLOBALS['myxa.environment.file_override'] = static function (string $filename, int $flags) use ($environmentFile): false {
+            $GLOBALS['myxa.environment.file_override'] = static function (
+                string $filename,
+                int $flags,
+            ) use ($environmentFile): false {
                 self::assertSame($environmentFile, $filename);
                 self::assertSame(FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES, $flags);
 

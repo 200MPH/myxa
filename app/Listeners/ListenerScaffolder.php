@@ -238,7 +238,9 @@ final class ListenerScaffolder
      */
     private function withRegisteredListener(string $source, string $eventClass, string $listenerClass): string
     {
-        $methodPattern = '/(?P<prefix>protected function listeners\(\): array\s*\{\s*return \[)(?P<body>.*?)(?P<suffix>\s*\];\s*\})/s';
+        $methodPattern = '/(?P<prefix>protected function listeners\(\): array\s*\{\s*return \[)'
+            . '(?P<body>.*?)'
+            . '(?P<suffix>\s*\];\s*\})/s';
 
         if (preg_match($methodPattern, $source, $matches) !== 1) {
             throw new RuntimeException('Unable to locate listeners() array in the event provider.');
@@ -270,7 +272,9 @@ final class ListenerScaffolder
         $eventKey = '\\' . ltrim($eventClass, '\\') . '::class';
         $listenerKey = '\\' . ltrim($listenerClass, '\\') . '::class';
 
-        $eventBlockPattern = '/(?P<prefix>^\s*' . preg_quote($eventKey, '/') . " => \\[\n)(?P<listeners>.*?)(?P<suffix>^\\s*\\],\\s*$)/ms";
+        $eventBlockPattern = '/(?P<prefix>^\s*'
+            . preg_quote($eventKey, '/')
+            . " => \\[\n)(?P<listeners>.*?)(?P<suffix>^\\s*\\],\\s*$)/ms";
 
         if (preg_match($eventBlockPattern, $body, $matches) === 1) {
             $listeners = $matches['listeners'];

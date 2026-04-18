@@ -104,13 +104,15 @@ final class Kernel extends ConsoleKernel
             return true;
         }
 
-        if (in_array($command, [
+        if (
+            in_array($command, [
             'maintenance:on',
             'maintenance:off',
             'maintenance:status',
             'version:sync',
             'version:show',
-        ], true)) {
+            ], true)
+        ) {
             return true;
         }
 

@@ -184,7 +184,9 @@ final class MaintenanceMode
     }
 
     /**
-     * @param callable(array{commands: array<string, array<string, mixed>>}): array{commands: array<string, array<string, mixed>>} $callback
+     * @param callable(
+     *     array{commands: array<string, array<string, mixed>>}
+     * ): array{commands: array<string, array<string, mixed>>} $callback
      */
     private function mutateConsoleActivityState(callable $callback): void
     {
@@ -222,12 +224,25 @@ final class MaintenanceMode
             return;
         }
 
-        if (!@mkdir($directory, 0777, true) && !is_dir($directory)) {
+        $created = @mkdir($directory, 0777, true);
+
+        if ($created === false) {
+            clearstatcache(true, $directory);
+
+            if ($this->directoryExists($directory)) {
+                return;
+            }
+
             throw new RuntimeException(sprintf(
                 'Unable to create maintenance state directory [%s].',
                 $directory,
             ));
         }
+    }
+
+    private function directoryExists(string $directory): bool
+    {
+        return is_dir($directory);
     }
 
     private function consoleActivityPath(): string

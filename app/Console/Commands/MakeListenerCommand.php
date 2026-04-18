@@ -38,7 +38,11 @@ final class MakeListenerCommand extends Command
     public function options(): array
     {
         return [
-            new InputOption('event', 'Optional event class this listener should target, for example UserRegistered.', true),
+            new InputOption(
+                'event',
+                'Optional event class this listener should target, for example UserRegistered.',
+                true,
+            ),
         ];
     }
 

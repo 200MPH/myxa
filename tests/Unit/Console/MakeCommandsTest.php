@@ -174,7 +174,9 @@ PHP);
     public function testMakeEventAndMiddlewareCommandsExposeMetadataAndScaffoldFiles(): void
     {
         $eventCommand = new MakeEventCommand(new EventScaffolder($this->rootPath . '/app/Events'));
-        $middlewareCommand = new MakeMiddlewareCommand(new MiddlewareScaffolder($this->rootPath . '/app/Http/Middleware'));
+        $middlewareCommand = new MakeMiddlewareCommand(
+            new MiddlewareScaffolder($this->rootPath . '/app/Http/Middleware'),
+        );
 
         self::assertSame('make:event', $eventCommand->name());
         self::assertSame('Generate a new application event class.', $eventCommand->description());

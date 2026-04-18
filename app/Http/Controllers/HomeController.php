@@ -17,8 +17,7 @@ final class HomeController
         ConfigRepository $config,
         Html $html,
         ApplicationVersion $version,
-    ): Response
-    {
+    ): Response {
         $appName = (string) $config->get('app.name', 'Myxa App');
         $appUrl = (string) $config->get('app.url', $request->fullUrl());
         $appEnv = (string) $config->get('app.env', 'local');

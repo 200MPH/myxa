@@ -40,8 +40,14 @@ final class MiddlewareScaffolderTest extends TestCase
         self::assertSame($this->middlewarePath . '/EnsureTenantMiddleware.php', $result['path']);
         self::assertSame('App\\Http\\Middleware\\EnsureTenantMiddleware', $result['class']);
         self::assertIsString($source);
-        self::assertStringContainsString('final class EnsureTenantMiddleware implements MiddlewareInterface', $source);
-        self::assertStringContainsString('public function handle(Request $request, Closure $next, RouteDefinition $route): mixed', $source);
+        self::assertStringContainsString(
+            'final class EnsureTenantMiddleware implements MiddlewareInterface',
+            $source,
+        );
+        self::assertStringContainsString(
+            'public function handle(Request $request, Closure $next, RouteDefinition $route): mixed',
+            $source,
+        );
         self::assertStringContainsString('return $next();', $source);
     }
 
@@ -69,7 +75,10 @@ final class MiddlewareScaffolderTest extends TestCase
         self::assertSame('App\\Http\\Middleware\\Api\\EnsureTokenScopeMiddleware', $result['class']);
         self::assertIsString($source);
         self::assertStringContainsString('namespace App\\Http\\Middleware\\Api;', $source);
-        self::assertStringContainsString('final class EnsureTokenScopeMiddleware implements MiddlewareInterface', $source);
+        self::assertStringContainsString(
+            'final class EnsureTokenScopeMiddleware implements MiddlewareInterface',
+            $source,
+        );
     }
 
     public function testHelperMethodsNormalizeMiddlewareNamesNamespacesAndPaths(): void

@@ -74,7 +74,10 @@ PHP);
         self::assertNull($result['event']);
         self::assertIsString($source);
         self::assertIsString($providerSource);
-        self::assertStringContainsString('final class SendWelcomeEmailListener implements EventHandlerInterface', $source);
+        self::assertStringContainsString(
+            'final class SendWelcomeEmailListener implements EventHandlerInterface',
+            $source,
+        );
         self::assertStringContainsString('// Handle the event.', $source);
         self::assertStringContainsString('return [];', $providerSource);
     }
@@ -137,7 +140,10 @@ PHP);
         self::assertSame('App\\Listeners\\Auth', $scaffolder->normalizeNamespace('Auth\\TrackLogin'));
         self::assertSame('App\\Events\\UserRegistered', $scaffolder->normalizeEventClass('UserRegistered'));
         self::assertSame('App\\Events\\Auth\\UserLoggedIn', $scaffolder->normalizeEventClass('Auth/UserLoggedIn'));
-        self::assertSame('Myxa\\Events\\EventInterface', $scaffolder->normalizeEventClass('Myxa\\Events\\EventInterface'));
+        self::assertSame(
+            'Myxa\\Events\\EventInterface',
+            $scaffolder->normalizeEventClass('Myxa\\Events\\EventInterface'),
+        );
         self::assertNull($scaffolder->normalizeEventClass('////'));
         self::assertSame(
             $this->listenersPath . '/Auth/TrackLoginListener.php',

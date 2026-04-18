@@ -35,7 +35,9 @@ final class StorageLinkCommand extends Command
 
         if (is_link($link)) {
             $currentTarget = readlink($link);
-            $resolvedCurrentTarget = is_string($currentTarget) ? $this->normalizePath($currentTarget, dirname($link)) : null;
+            $resolvedCurrentTarget = is_string($currentTarget)
+                ? $this->normalizePath($currentTarget, dirname($link))
+                : null;
 
             if ($resolvedCurrentTarget === $this->normalizePath($target)) {
                 $this->info(sprintf('Public storage link already exists at %s', $link))->icon();

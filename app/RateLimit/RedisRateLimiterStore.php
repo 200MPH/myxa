@@ -125,8 +125,12 @@ LUA;
         }
 
         return [
-            'attempts' => isset($decoded['attempts']) && is_int($decoded['attempts']) ? $decoded['attempts'] : null,
-            'expires_at' => isset($decoded['expires_at']) && is_int($decoded['expires_at']) ? $decoded['expires_at'] : null,
+            'attempts' => isset($decoded['attempts']) && is_int($decoded['attempts'])
+                ? $decoded['attempts']
+                : null,
+            'expires_at' => isset($decoded['expires_at']) && is_int($decoded['expires_at'])
+                ? $decoded['expires_at']
+                : null,
         ];
     }
 

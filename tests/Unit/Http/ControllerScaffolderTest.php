@@ -108,7 +108,10 @@ final class ControllerScaffolderTest extends TestCase
             $scaffolder->make('Dashboard', invokable: true, resource: true);
             self::fail('Expected conflicting controller styles to fail.');
         } catch (\RuntimeException $exception) {
-            self::assertStringContainsString('Choose either an invokable controller or a resource controller', $exception->getMessage());
+            self::assertStringContainsString(
+                'Choose either an invokable controller or a resource controller',
+                $exception->getMessage(),
+            );
         }
 
         try {

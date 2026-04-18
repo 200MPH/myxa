@@ -81,7 +81,10 @@ final class ThrottleMiddleware implements MiddlewareInterface
         $prefix = $settings['prefix'] ?? $resolvedPreset;
 
         if ($maxAttempts < 1 || $decaySeconds < 1) {
-            throw new InvalidArgumentException(sprintf('Rate limit preset [%s] contains invalid limits.', $resolvedPreset));
+            throw new InvalidArgumentException(sprintf(
+                'Rate limit preset [%s] contains invalid limits.',
+                $resolvedPreset,
+            ));
         }
 
         return [

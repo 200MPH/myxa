@@ -167,8 +167,12 @@ final class MigrationManager
      *
      * @return array{0: TableDiff, 1: string}
      */
-    public function diff(string $table, ?string $connection = null, ?string $snapshotPath = null, ?string $className = null): array
-    {
+    public function diff(
+        string $table,
+        ?string $connection = null,
+        ?string $snapshotPath = null,
+        ?string $className = null,
+    ): array {
         $connection ??= $this->config->defaultConnection();
         $snapshotPath ??= $this->config->snapshotPath($connection);
 
@@ -221,10 +225,13 @@ final class MigrationManager
         $this->repository->ensureExists($connection);
 
         if ($migration->withinTransaction()) {
-            $this->database->transaction(function () use ($migration, $schema, $loadedMigration, $batch, $connection): void {
-                $migration->up($schema);
-                $this->repository->log($loadedMigration->name, $loadedMigration->class, $batch, $connection);
-            }, $connection);
+            $this->database->transaction(
+                function () use ($migration, $schema, $loadedMigration, $batch, $connection): void {
+                    $migration->up($schema);
+                    $this->repository->log($loadedMigration->name, $loadedMigration->class, $batch, $connection);
+                },
+                $connection,
+            );
 
             return;
         }

@@ -91,7 +91,6 @@ final class QueuePruneFailedCommand extends Command
             'h' => $amount * 3600,
             'd' => $amount * 86400,
             'w' => $amount * 604800,
-            default => throw new InvalidArgumentException('Invalid [older-than] unit.'),
         };
     }
 

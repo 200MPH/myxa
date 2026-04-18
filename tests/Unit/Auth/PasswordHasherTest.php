@@ -61,7 +61,10 @@ namespace Test\Unit\Auth {
             $hasher = new PasswordHasher();
             $seen = [];
 
-            $GLOBALS['myxa_test_password_verify_override'] = static function (string $password, string $hash) use (&$seen): bool {
+            $GLOBALS['myxa_test_password_verify_override'] = static function (
+                string $password,
+                string $hash,
+            ) use (&$seen): bool {
                 $seen = [$password, $hash];
 
                 return $password === 'secret-123' && $hash === 'hashed-value';

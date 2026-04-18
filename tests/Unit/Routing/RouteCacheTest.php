@@ -218,6 +218,9 @@ PHP, $routePath));
         self::assertSame($this->cachePath, $writtenPath);
         self::assertSame($originalRouter, $app->make(Router::class));
         self::assertStringContainsString($routePath, (string) file_get_contents($this->cachePath));
-        self::assertStringContainsString("\$route->middleware(...array (\n  0 => 'auth',", (string) file_get_contents($this->cachePath));
+        self::assertStringContainsString(
+            "\$route->middleware(...array (\n  0 => 'auth',",
+            (string) file_get_contents($this->cachePath),
+        );
     }
 }

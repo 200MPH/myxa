@@ -6,22 +6,8 @@ namespace Test\Unit\Foundation;
 
 use App\Config\ConfigRepository;
 use App\Foundation\ApplicationFactory;
-use Myxa\Support\ServiceProvider;
 use PHPUnit\Framework\Attributes\CoversClass;
 use Test\TestCase;
-
-final class ApplicationFactoryTestProvider extends ServiceProvider
-{
-    public function register(): void
-    {
-        $this->app()->instance('factory.registered', true);
-    }
-
-    public function boot(): void
-    {
-        $this->app()->instance('factory.booted', true);
-    }
-}
 
 #[CoversClass(ApplicationFactory::class)]
 final class ApplicationFactoryTest extends TestCase
@@ -90,7 +76,10 @@ PHP);
         self::assertSame(42, $config->get('demo.answer'));
         self::assertTrue($app->make('factory.registered'));
         self::assertTrue($app->make('factory.booted'));
-        self::assertInstanceOf(ApplicationFactoryTestProvider::class, $app->getProvider(ApplicationFactoryTestProvider::class));
+        self::assertInstanceOf(
+            ApplicationFactoryTestProvider::class,
+            $app->getProvider(ApplicationFactoryTestProvider::class),
+        );
         self::assertSame('from-env-file', getenv('APPLICATION_FACTORY_TEST_ENV') ?: null);
     }
 

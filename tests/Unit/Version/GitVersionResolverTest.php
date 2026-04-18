@@ -3,17 +3,6 @@
 declare(strict_types=1);
 
 namespace App\Version {
-    final class GitVersionResolverTestState
-    {
-        public static bool $procOpenFails = false;
-
-        /** @var list<array{exit: int, stdout: string, stderr: string}> */
-        public static array $responses = [];
-
-        /** @var array<int, int> */
-        public static array $exitCodes = [];
-    }
-
     /**
      * @param list<string> $command
      * @param array<int, mixed> $descriptorSpec
@@ -22,15 +11,15 @@ namespace App\Version {
      */
     function proc_open(array $command, array $descriptorSpec, &$pipes)
     {
-        if (GitVersionResolverTestState::$procOpenFails) {
+        if (\Test\Unit\Version\GitVersionResolverTestState::$procOpenFails) {
             return false;
         }
 
-        if (GitVersionResolverTestState::$responses === []) {
+        if (\Test\Unit\Version\GitVersionResolverTestState::$responses === []) {
             return \proc_open($command, $descriptorSpec, $pipes);
         }
 
-        $response = array_shift(GitVersionResolverTestState::$responses);
+        $response = array_shift(\Test\Unit\Version\GitVersionResolverTestState::$responses);
 
         if (!is_array($response)) {
             return false;
@@ -59,7 +48,7 @@ namespace App\Version {
             return false;
         }
 
-        GitVersionResolverTestState::$exitCodes[get_resource_id($process)] = $response['exit'];
+        \Test\Unit\Version\GitVersionResolverTestState::$exitCodes[get_resource_id($process)] = $response['exit'];
 
         return $process;
     }
@@ -71,9 +60,9 @@ namespace App\Version {
     {
         $id = get_resource_id($process);
 
-        if (array_key_exists($id, GitVersionResolverTestState::$exitCodes)) {
-            $exitCode = GitVersionResolverTestState::$exitCodes[$id];
-            unset(GitVersionResolverTestState::$exitCodes[$id]);
+        if (array_key_exists($id, \Test\Unit\Version\GitVersionResolverTestState::$exitCodes)) {
+            $exitCode = \Test\Unit\Version\GitVersionResolverTestState::$exitCodes[$id];
+            unset(\Test\Unit\Version\GitVersionResolverTestState::$exitCodes[$id]);
             \fclose($process);
 
             return $exitCode;
@@ -86,7 +75,6 @@ namespace App\Version {
 namespace Test\Unit\Version {
 
     use App\Version\GitVersionResolver;
-    use App\Version\GitVersionResolverTestState;
     use PHPUnit\Framework\Attributes\CoversClass;
     use RuntimeException;
     use Test\TestCase;

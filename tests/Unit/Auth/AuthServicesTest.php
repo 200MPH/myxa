@@ -94,12 +94,12 @@ final class AuthServicesTest extends TestCase
                         'cookie' => 'auth_session',
                         'lifetime' => 3600,
                         'length' => 64,
-                ],
-                'tokens' => [
+                    ],
+                    'tokens' => [
                     'length' => 40,
                     'default_name' => 'cli',
                     'default_scopes' => ['*'],
-                ],
+                    ],
             ],
         ]);
 
