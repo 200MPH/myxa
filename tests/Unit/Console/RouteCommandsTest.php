@@ -271,14 +271,14 @@ final class RouteCommandsTest extends TestCase
         $maintenance->disable();
     }
 
-    public function testConsoleKernelWritesMaintenanceMessageWhenNotQuiet(): void
+    public function testConsoleKernelReturnsErrorWhenMaintenanceModeIsEnabled(): void
     {
         $app = ApplicationFactory::create(base_path());
         $maintenance = $app->make(MaintenanceMode::class);
         $maintenance->enable('phpunit');
 
         try {
-            $exitCode = $app->make(Kernel::class)->handle(['myxa', 'route:clear']);
+            $exitCode = $app->make(Kernel::class)->handle(['myxa', 'route:clear', '--quiet']);
 
             self::assertSame(1, $exitCode);
         } finally {
@@ -390,8 +390,8 @@ final class RouteCommandsTest extends TestCase
 
         $kernel = $app->make(Kernel::class);
 
-        self::assertSame(0, $kernel->handle(['myxa', 'route:cache', '--help']));
-        self::assertSame(0, $kernel->handle(['myxa', '--version']));
+        self::assertSame(0, $kernel->handle(['myxa', 'route:cache', '--help', '--quiet']));
+        self::assertSame(0, $kernel->handle(['myxa', '--version', '--quiet']));
 
         $maintenance->disable();
     }
