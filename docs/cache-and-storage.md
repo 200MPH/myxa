@@ -130,6 +130,23 @@ AWS_USE_PATH_STYLE_ENDPOINT=false
 
 `AWS_ENDPOINT` and `AWS_USE_PATH_STYLE_ENDPOINT=true` are especially useful for MinIO or other S3-compatible local/dev services.
 
+For scalable apps, the simplest pattern is one `s3` disk plus an enum that builds public/private key prefixes:
+
+```php
+use App\Storage\StorageArea;
+use Myxa\Support\Facades\Storage;
+
+Storage::put(StorageArea::PublicArea->path('avatars/jane.jpg'), $contents, storage: 's3');
+Storage::put(StorageArea::PrivateArea->path('reports/invoice-42.pdf'), $contents, storage: 's3');
+```
+
+That resolves to object keys like:
+
+- `public/avatars/jane.jpg`
+- `private/reports/invoice-42.pdf`
+
+The project now ships [StorageArea](/home/chevy/projects/myxa/project/app/Storage/StorageArea.php:1) for exactly this purpose.
+
 ## Local vs Public
 
 Both `local` and `public` are filesystem-backed, but they serve different purposes:

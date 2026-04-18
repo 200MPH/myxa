@@ -627,6 +627,7 @@ PHP);
         self::assertSame('s3', $disk->alias());
     }
 
+
     public function testStorageProviderSkipsBindingWhenNoSupportedDisksExist(): void
     {
         $app = new Application();

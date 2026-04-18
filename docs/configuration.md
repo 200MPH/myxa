@@ -210,6 +210,8 @@ Use:
 - `public` for web-exposed files
 - `s3` for shared or cloud-backed files across multiple nodes
 
+For S3-backed apps, the simplest recommendation is one `s3` disk plus an app enum such as `App\Storage\StorageArea` to build object keys like `public/...` and `private/...`.
+
 ## Rate Limiting
 
 ```text
