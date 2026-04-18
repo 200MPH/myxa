@@ -6,19 +6,20 @@ If you already know Laravel, the project structure should feel very familiar. Se
 
 ## Requirements
 
-- Docker
-- Docker Compose
+You can run the app in either of these ways:
 
-You do not need PHP, MySQL, or Redis installed locally if you use the provided Docker stack.
+- Docker + Docker Compose
+- host-native PHP environment with the required services already available
+
+If you use Docker, you do not need PHP, MySQL, or Redis installed locally.
+If your host already has PHP, Composer, MySQL, and Redis available, Docker is optional.
 
 ## Two Ways To Start
 
 You can begin in either of these ways:
 
-1. Clone this repository, then follow the Docker steps below.
-2. Create a fresh app with Composer, then start the Docker stack.
-
-The Docker-based runtime is the same in both cases.
+1. Clone the Myxa repository from `https://github.com/200MPH/myxa`, then use either the Docker or host-native setup below.
+2. Create a fresh app with Composer, then choose the same Docker or host-native runtime style.
 
 ## Install Via Composer
 
@@ -44,7 +45,7 @@ Notes:
 - `composer create-project` already installs dependencies, so you do not need a separate `composer install` step before first boot
 - after creation, you can use the same `./myxa` workflow as a cloned checkout
 
-## First Boot
+## First Boot With Docker
 
 1. Copy the environment file:
 
@@ -77,9 +78,66 @@ The default stack starts:
 - `db`: MySQL 8.4
 - `redis`: Redis 7
 
+## First Boot Without Docker
+
+If your host already has the required services available, you can run the app without Docker.
+
+Typical requirements:
+
+- PHP 8.4 with the extensions required by `composer.json`
+- Composer
+- a running MySQL-compatible database
+- a running Redis instance when you want Redis-backed cache, queue, sessions, or rate limiting
+
+Basic flow:
+
+1. Copy the environment file:
+
+```bash
+cp .env.example .env
+```
+
+2. Install PHP dependencies:
+
+```bash
+composer install
+```
+
+3. Update `.env` for your local services.
+
+Typical examples:
+
+```text
+APP_URL=http://localhost:8000
+DB_HOST=127.0.0.1
+DB_PORT=3306
+REDIS_HOST=127.0.0.1
+REDIS_PORT=6379
+```
+
+4. Run migrations when needed:
+
+```bash
+./myxa migrate
+```
+
+5. Start the app with your preferred PHP web server setup.
+
+For example, with PHP's built-in server:
+
+```bash
+php -S localhost:8000 -t public
+```
+
+Then open:
+
+```text
+http://localhost:8000
+```
+
 ## What You Should See
 
-After the containers are healthy and dependencies are installed, visiting `https://myxa.localhost` should render the Myxa homepage.
+After the app is booted and dependencies are installed, visiting the configured app URL should render the Myxa homepage.
 
 The homepage does not require you to run migrations first. Database-backed features such as auth, tokens, and your own models will need migrations when you start using them.
 
@@ -123,13 +181,14 @@ The recommended loop is:
 1. Edit files on the host.
 2. Refresh the browser.
 3. Use `./myxa` for project commands.
-4. Run `docker compose exec app composer test` or `vendor/bin/phpunit` inside the container when you want verification.
+4. Run tests either inside Docker or directly on the host, depending on your setup.
 
-Because the project directory is mounted into the containers, code changes are visible immediately.
+With Docker, the project directory is mounted into the containers, so code changes are visible immediately.
 
 ## Useful Local URLs and Ports
 
-- app: `https://myxa.localhost`
+- Docker app: `https://myxa.localhost`
+- host-native app example: `http://localhost:8000`
 - MySQL: `localhost:3306` by default
 - Redis: `localhost:6379` by default
 
@@ -181,6 +240,15 @@ Also make sure you ran:
 ```bash
 docker compose exec app composer install
 ```
+
+### The page does not load on a host-native setup
+
+Check:
+
+- `composer install` completed successfully
+- `.env` points at your real local database and Redis services
+- your PHP web server is pointing at the `public/` directory
+- the configured `APP_URL` matches how you are opening the app
 
 ### Ports `80` or `443` are already in use
 

@@ -6,6 +6,8 @@ The developer experience is intentionally close to Laravel style, so teams comin
 
 ## Quick Start
 
+The quickest local path is Docker, but Docker is not required if your host already has PHP, Composer, and the needed services available.
+
 1. Copy the environment file:
 
 ```bash
@@ -35,6 +37,8 @@ If you want the full command list, run:
 ```bash
 ./myxa
 ```
+
+If you want a host-native setup instead, see [Getting Started](docs/getting-started.md). That guide now covers both Docker and non-Docker boot paths.
 
 ## Install Via Composer
 
