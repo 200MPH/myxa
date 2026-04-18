@@ -23,8 +23,7 @@
         <span class="eyebrow">Documentation</span>
         <h1><?= $_e($pageTitle) ?></h1>
         <p class="lede">
-            Browse the project guides directly inside the running app. These pages are rendered from the
-            Markdown files in the repository.
+            Practical guides for building with Myxa, from first boot to queues, storage, auth, and hybrid frontend work.
         </p>
     </section>
 

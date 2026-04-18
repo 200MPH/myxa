@@ -243,6 +243,9 @@ Route::post('/imports', [ImportController::class, 'store'])
     ->middleware(RateLimitMiddleware::using(10, 60, 'imports'));
 ```
 
+For a fuller auth walkthrough, see [Auth](auth.md).
+For preset and store details, see [Rate Limiting and Throttling](rate-limiting.md).
+
 ## Response Helpers
 
 You can return a response object directly:

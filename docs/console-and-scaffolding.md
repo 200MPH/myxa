@@ -34,11 +34,11 @@ Built-in CLI options:
 
 ## Maintenance and Versioning
 
-- `maintenance:on`
-- `maintenance:off`
-- `maintenance:status`
-- `version:sync`
-- `version:show`
+- `maintenance:on`: put the app into maintenance mode.
+- `maintenance:off`: bring the app back out of maintenance mode.
+- `maintenance:status`: show whether maintenance mode is currently enabled.
+- `version:sync`: refresh the stored application version metadata.
+- `version:show`: print the current application version information.
 
 Examples:
 
@@ -51,19 +51,19 @@ Examples:
 
 ## Cache, Routes, and Storage
 
-- `cache:clear`
-- `cache:forget`
-- `queue:failed`
-- `queue:flush-failed`
-- `queue:forget-failed`
-- `queue:prune-failed`
-- `queue:retry`
-- `queue:retry-all`
-- `queue:status`
-- `queue:work`
-- `route:cache`
-- `route:clear`
-- `storage:link`
+- `cache:clear`: clear one cache store or the default cache store.
+- `cache:forget`: remove one cache key from a store.
+- `queue:failed`: list failed jobs currently in the DLQ.
+- `queue:flush-failed`: delete all failed jobs, optionally for one queue.
+- `queue:forget-failed`: delete one failed job from the DLQ by id.
+- `queue:prune-failed`: delete failed jobs older than a given age such as `7d`.
+- `queue:retry`: move one failed job back onto a live queue.
+- `queue:retry-all`: move many failed jobs back onto a live queue.
+- `queue:status`: show queue counts and operational state.
+- `queue:work`: run a worker that consumes queued jobs.
+- `route:cache`: compile and write the route cache manifest.
+- `route:clear`: remove the compiled route cache manifest.
+- `storage:link`: create the public storage symlink for browser-accessible files.
 
 Examples:
 
@@ -93,39 +93,39 @@ Useful queue command notes:
 
 ## Scaffolding
 
-- `frontend:install`
-- `make:command`
-- `make:controller`
-- `make:event`
-- `make:listener`
-- `make:middleware`
-- `make:migration`
-- `make:model`
-- `make:resource`
+- `frontend:install`: scaffold the hybrid frontend toolchain.
+- `make:command`: generate a new console command class.
+- `make:controller`: generate a new HTTP controller.
+- `make:event`: generate a new application event class.
+- `make:listener`: generate a new event listener and optionally register it.
+- `make:middleware`: generate a new HTTP middleware class.
+- `make:migration`: generate a new migration file.
+- `make:model`: generate a new model from scratch or from an existing source.
+- `make:resource`: generate a DTO-style data/resource class.
 
 ## Database and Schema
 
-- `migrate`
-- `migrate:rollback`
-- `migrate:status`
-- `migrate:snapshot`
-- `migrate:diff`
-- `migrate:reverse`
+- `migrate`: run pending migrations.
+- `migrate:rollback`: roll back one or more migration batches.
+- `migrate:status`: show which migrations have or have not run.
+- `migrate:snapshot`: write a schema snapshot JSON file.
+- `migrate:diff`: compare the live schema against a stored snapshot.
+- `migrate:reverse`: generate a migration from an existing live table.
 
 ## Auth, Users, and Tokens
 
-- `auth:install`
-- `user:create`
-- `user:list`
-- `user:password`
-- `token:create`
-- `token:list`
-- `token:revoke`
-- `token:prune`
+- `auth:install`: generate the auth-related migrations used by the app.
+- `user:create`: create a new user.
+- `user:list`: list users from the app database.
+- `user:password`: reset or generate a user password.
+- `token:create`: create a personal access token for a user.
+- `token:list`: list tokens for one user or for the whole app.
+- `token:revoke`: revoke one token by id.
+- `token:prune`: remove expired tokens.
 
 ## Frontend
 
-- `frontend:install`
+- `frontend:install`: scaffold the hybrid Vue frontend integration.
 
 Example:
 
@@ -138,6 +138,18 @@ That scaffolds a hybrid Vue + Vite frontend layer without turning the app into a
 ```bash
 npm install
 npm run frontend:build
+```
+
+Options:
+
+- `vue`: the supported hybrid frontend stack to scaffold right now
+- `--force`: overwrite managed frontend scaffold files when they already exist
+
+More examples:
+
+```bash
+./myxa frontend:install vue --force
+npm run frontend:watch
 ```
 
 ## Creating New Commands
@@ -159,6 +171,18 @@ Important note:
 - commands are auto-discovered from `app/Console/Commands`
 - you do not need to register them manually in `Kernel.php`
 
+Options:
+
+- `--command=reports:send`: set the CLI command name explicitly
+- `--description="..."`: add the command description in the generated class
+
+More examples:
+
+```bash
+./myxa make:command Admin/ReindexSearch --command=search:reindex --description="Rebuild the search index."
+./myxa make:command Reports/ArchiveDaily
+```
+
 ## Creating Controllers
 
 Default controller:
@@ -179,6 +203,18 @@ Resource-style controller:
 ./myxa make:controller Admin/User --resource
 ```
 
+Options:
+
+- `--invokable`: generate a single-action controller using `__invoke()`
+- `--resource`: generate a CRUD-style controller with common action methods
+
+More examples:
+
+```bash
+./myxa make:controller Docs/Page --invokable
+./myxa make:controller Admin/Users --resource
+```
+
 ## Creating Middleware
 
 ```bash
@@ -186,6 +222,13 @@ Resource-style controller:
 ```
 
 This creates a class under `app/Http/Middleware`.
+
+Examples:
+
+```bash
+./myxa make:middleware Auth/RequireAdmin
+./myxa make:middleware Api/EnsureTokenScope
+```
 
 ## Creating Events and Listeners
 
@@ -206,6 +249,17 @@ Important note:
 - when you pass `--event`, the listener is added to `EventServiceProvider::listeners()`
 - without `--event`, the listener class is generated but not registered automatically
 
+Option:
+
+- `--event=Auth/UserLoggedIn`: generate a typed listener and register it automatically
+
+More examples:
+
+```bash
+./myxa make:listener Users/SendWelcomeEmail --event=UserRegistered
+./myxa make:listener Audit/RecordLogin
+```
+
 ## Creating DTO-Style Resources
 
 Generate a data class:
@@ -224,10 +278,34 @@ Create a forward migration:
 ./myxa make:migration create_posts_table --create=posts
 ```
 
+Migration generator options:
+
+- `--create=posts`: generate a create-table migration scaffold
+- `--table=posts`: generate an alter-table migration scaffold
+- `--class=CreatePostsTable`: set the migration class name explicitly
+- `--connection=mysql`: target one configured database connection
+
+Examples:
+
+```bash
+./myxa make:migration add_status_to_orders_table --table=orders
+./myxa make:migration create_audit_logs_table --create=audit_logs --connection=mysql
+```
+
 Run migrations:
 
 ```bash
 ./myxa migrate
+```
+
+Useful options:
+
+- `--connection=mysql`: run only one connection
+
+Example:
+
+```bash
+./myxa migrate --connection=mysql
 ```
 
 Show migration status:
@@ -236,16 +314,44 @@ Show migration status:
 ./myxa migrate:status
 ```
 
+Example:
+
+```bash
+./myxa migrate:status --connection=mysql
+```
+
 Rollback the latest batch:
 
 ```bash
 ./myxa migrate:rollback --step=1
 ```
 
+Rollback options:
+
+- `--step=1`: choose how many batches to roll back
+- `--connection=mysql`: roll back only one connection
+
+Example:
+
+```bash
+./myxa migrate:rollback --step=2 --connection=mysql
+```
+
 Reverse-engineer from an existing table:
 
 ```bash
 ./myxa migrate:reverse users
+```
+
+Reverse-engineering options:
+
+- `--connection=mysql`: source connection alias
+- `--class=CreateLegacyUsersTable`: explicit migration class name
+
+Example:
+
+```bash
+./myxa migrate:reverse legacy_users --connection=mysql --class=CreateLegacyUsersTable
 ```
 
 Create a model:
@@ -258,6 +364,20 @@ Create a model from a live table:
 
 ```bash
 ./myxa make:model App\\Models\\AuditLog --from-table=audit_logs
+```
+
+Model generator options:
+
+- `--table=audit_logs`: set a table name for a blank scaffold
+- `--from-table=audit_logs`: reverse-engineer from a live table
+- `--from-migration=20260101000000_create_audit_logs_table.php`: generate from a migration file
+- `--connection=mysql`: pick the source connection for reverse-engineering
+
+More examples:
+
+```bash
+./myxa make:model App\\Models\\Invoice --table=invoices
+./myxa make:model App\\Models\\LegacyOrder --from-table=legacy_orders --connection=mysql
 ```
 
 ## Auth Bootstrap
@@ -276,16 +396,52 @@ If your session driver is `file` or `redis`, you can skip the optional database 
 ./myxa migrate
 ```
 
+Option:
+
+- `--without-sessions`: skip generating the database-backed session migration
+
+More examples:
+
+```bash
+./myxa auth:install
+./myxa auth:install --without-sessions
+```
+
 Create a user:
 
 ```bash
 ./myxa user:create jane@example.com --name="Jane"
 ```
 
+User command options:
+
+- `--name="Jane"`: set the display name
+- `--password="secret"`: provide a password instead of generating one
+
+More examples:
+
+```bash
+./myxa user:create admin@example.com --name="Admin"
+./myxa user:create ops@example.com --name="Ops" --password="temporary-secret"
+```
+
 Create a bearer token:
 
 ```bash
 ./myxa token:create jane@example.com --name=cli --scopes=users:read,users:write
+```
+
+Token command options:
+
+- `--name=cli`: set a token label
+- `--scopes=users:read,users:write`: assign scopes
+- `--expires="+7 days"`: set an expiration datetime
+
+More examples:
+
+```bash
+./myxa token:create jane@example.com --name=deploy
+./myxa token:create api@example.com --name=integration --scopes=users:read --expires="+30 days"
 ```
 
 ## Maintenance Mode Notes

@@ -24,6 +24,31 @@ Current project config files:
 - `config/storage.php`
 - `config/version.php`
 
+Short summary for each file:
+
+- `config/app.php`: core app identity and bootstrap settings.
+  This is where you set the app name, environment defaults, base URL, timezone, log path, and the provider list that boots the application.
+- `config/auth.php`: authentication, sessions, and token behavior.
+  Use it to choose session storage, token storage, login-related settings, guards, and auth infrastructure defaults.
+- `config/cache.php`: application cache stores and route cache settings.
+  This file defines the default cache store, available stores such as file or Redis, cache prefixes, and route cache configuration.
+- `config/database.php`: database connections and driver-level connection defaults.
+  It holds the default connection plus named connection templates for MySQL, PostgreSQL, SQLite, and SQL Server.
+- `config/maintenance.php`: maintenance-mode behavior.
+  Use it to control maintenance state handling, wait behavior, and command allowlists that can still run while maintenance mode is enabled.
+- `config/migrations.php`: migration repository and scaffolding settings.
+  This covers migration paths, schema snapshot paths, repository table names, and model-generation paths used by migration tooling.
+- `config/queue.php`: queue driver, worker, retry, and visibility-timeout settings.
+  It defines the default queue connection, named queue stores, worker sleep/max-idle behavior, retry defaults, DLQ-related behavior, and Redis queue options.
+- `config/rate_limit.php`: rate-limit stores and named presets.
+  Use it to choose the store backend and define reusable limit presets such as `api`, `login`, or `uploads`.
+- `config/services.php`: infrastructure-style service connections.
+  In this project it mainly holds Redis connection definitions, but it is the right place for other external service connection settings too.
+- `config/storage.php`: storage disks and file backend definitions.
+  It defines the default disk and named disks such as local, public, database-backed, or S3-backed storage.
+- `config/version.php`: application version source and sync behavior.
+  Use it to control how the app resolves version metadata and where generated version information is stored.
+
 As a rule:
 
 - put defaults and structure in `config/*.php`

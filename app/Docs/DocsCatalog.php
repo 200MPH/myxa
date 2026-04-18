@@ -34,11 +34,14 @@ final class DocsCatalog
             'configuration' => 1,
             'console-and-scaffolding' => 2,
             'http-routing' => 3,
-            'database' => 4,
-            'frontend' => 5,
-            'queues' => 6,
-            'cache-and-storage' => 7,
-            'events-and-services' => 8,
+            'auth' => 4,
+            'validation' => 5,
+            'rate-limiting' => 6,
+            'database' => 7,
+            'frontend' => 8,
+            'queues' => 9,
+            'cache-and-storage' => 10,
+            'events-and-services' => 11,
         ];
 
         $pages = [];
