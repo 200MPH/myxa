@@ -116,7 +116,7 @@ The default disk is selected by:
 STORAGE_DISK=local
 ```
 
-S3 uses Laravel-familiar environment variables:
+S3 environment variables:
 
 ```text
 AWS_ACCESS_KEY_ID=
