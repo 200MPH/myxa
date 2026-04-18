@@ -93,6 +93,7 @@ Useful queue command notes:
 
 ## Scaffolding
 
+- `frontend:install`
 - `make:command`
 - `make:controller`
 - `make:event`
@@ -121,6 +122,23 @@ Useful queue command notes:
 - `token:list`
 - `token:revoke`
 - `token:prune`
+
+## Frontend
+
+- `frontend:install`
+
+Example:
+
+```bash
+./myxa frontend:install vue
+```
+
+That scaffolds a hybrid Vue + Vite frontend layer without turning the app into a full SPA. After the command finishes, run:
+
+```bash
+npm install
+npm run frontend:build
+```
 
 ## Creating New Commands
 

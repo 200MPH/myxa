@@ -68,6 +68,7 @@ This Composer-based path assumes your host already has Composer and a compatible
 ./myxa queue:retry-all
 ./myxa queue:prune-failed --older-than=7d
 ./myxa storage:link
+./myxa frontend:install vue
 ./myxa migrate
 ```
 
@@ -76,6 +77,7 @@ This Composer-based path assumes your host already has Composer and a compatible
 - [Getting Started](docs/getting-started.md)
 - [Configuration](docs/configuration.md)
 - [Queues](docs/queues.md)
+- [Frontend](docs/frontend.md)
 - [Console and Scaffolding](docs/console-and-scaffolding.md)
 - [HTTP, Routing, Controllers, and Middleware](docs/http-routing.md)
 - [Database, Query Builder, Models, and Migrations](docs/database.md)

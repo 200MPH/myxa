@@ -1,5 +1,6 @@
 .env
 .codex
+node_modules
 vendor
 build
 version.json
