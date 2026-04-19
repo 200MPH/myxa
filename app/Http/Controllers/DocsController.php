@@ -75,6 +75,7 @@ final class DocsController
                 'activeSlug' => $document['slug'],
                 'content' => $markdown->render($document['markdown']),
                 'pageTitle' => $pageTitle,
+                'appVersion' => $appVersion,
             ],
             'layouts/app',
             [

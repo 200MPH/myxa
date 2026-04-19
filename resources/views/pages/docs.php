@@ -9,6 +9,7 @@
         <div class="docs-brand-copy">
             <span class="eyebrow">Myxa Documentation</span>
             <h1>Myxa</h1>
+            <p class="docs-brand-note">Version: <?= $_e($appVersion) ?></p>
             <p class="lede">
                 A lightweight, AI-powered PHP framework for teams that want to build modern systems fast
                 without giving up clarity, performance, or developer joy.
