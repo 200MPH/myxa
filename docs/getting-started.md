@@ -137,6 +137,14 @@ Then open:
 http://localhost:8000
 ```
 
+If you run behind Apache, point the virtual host `DocumentRoot` at the project's `public/` directory, not the repository root. The app now ships with `public/.htaccess` for front-controller routing, so make sure `mod_rewrite` is enabled and the vhost allows overrides or includes equivalent rewrite rules directly.
+
+Typical Apache requirements:
+
+- `DocumentRoot /path/to/your-app/public`
+- `AllowOverride All` for that directory, or the same rewrite rules in the vhost
+- `a2enmod rewrite`
+
 ## What You Should See
 
 After the app is booted and dependencies are installed, visiting the configured app URL should render the Myxa homepage.
