@@ -394,6 +394,7 @@ $twitterCard = isset($twitterCard) ? trim((string) $twitterCard) : 'summary';
 
         @media (max-width: 859px) {
             body {
+                display: block;
                 padding: 0.85rem;
             }
 
@@ -439,20 +440,11 @@ $twitterCard = isset($twitterCard) ? trim((string) $twitterCard) : 'summary';
             }
 
             .docs-nav {
-                grid-auto-flow: column;
-                grid-auto-columns: minmax(180px, 78%);
-                overflow-x: auto;
-                overflow-y: hidden;
-                padding-bottom: 0.2rem;
-                margin: 0 -0.15rem;
-                padding-inline: 0.15rem;
-                scroll-snap-type: x proximity;
-                -webkit-overflow-scrolling: touch;
+                gap: 0.4rem;
             }
 
             .docs-nav-link {
-                min-height: 100%;
-                scroll-snap-align: start;
+                padding: 0.65rem 0.75rem;
             }
 
             .docs-prose h1 {
