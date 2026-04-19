@@ -18,13 +18,16 @@ use Test\TestCase;
 final class DocsControllerTest extends TestCase
 {
     private string $docsPath;
+    private string $manifestPath;
 
     protected function setUp(): void
     {
         parent::setUp();
 
         $this->docsPath = sys_get_temp_dir() . '/myxa-docs-controller-' . uniqid('', true);
+        $this->manifestPath = sys_get_temp_dir() . '/myxa-docs-version-' . uniqid('', true) . '.json';
         mkdir($this->docsPath, 0777, true);
+        $this->unsetEnvironmentValue('APP_VERSION');
 
         file_put_contents(
             $this->docsPath . '/configuration.md',
@@ -48,6 +51,10 @@ MD,
 
         if (is_dir($this->docsPath)) {
             rmdir($this->docsPath);
+        }
+
+        if (is_file($this->manifestPath)) {
+            unlink($this->manifestPath);
         }
 
         parent::tearDown();
@@ -74,6 +81,7 @@ MD,
             ]),
             new ApplicationVersion(new ConfigRepository([
                 'version' => [
+                    'manifest' => $this->manifestPath,
                     'fallback' => '1.0.3',
                 ],
             ])),
