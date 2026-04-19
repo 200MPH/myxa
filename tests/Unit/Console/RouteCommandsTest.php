@@ -15,6 +15,7 @@ use App\Console\Commands\VersionSyncCommand;
 use App\Config\ConfigRepository;
 use App\Foundation\ApplicationFactory;
 use App\Maintenance\MaintenanceMode;
+use App\Providers\QueueServiceProvider;
 use Myxa\Console\CommandInterface;
 use Myxa\Console\ConsoleInput;
 use Myxa\Console\ConsoleOutput;
@@ -394,6 +395,29 @@ final class RouteCommandsTest extends TestCase
         self::assertSame(0, $kernel->handle(['myxa', '--version', '--quiet']));
 
         $maintenance->disable();
+    }
+
+    public function testConsoleKernelSkipsQueueCommandsWhenQueueProviderIsDisabled(): void
+    {
+        $app = ApplicationFactory::create(base_path());
+        $config = $app->make(ConfigRepository::class);
+        $providers = $config->get('app.providers', []);
+        self::assertIsArray($providers);
+
+        $config->set('app.providers', array_values(array_filter(
+            $providers,
+            static fn (mixed $provider): bool => $provider !== QueueServiceProvider::class,
+        )));
+
+        $kernel = new Kernel($app);
+        $commandsMethod = new \ReflectionMethod(Kernel::class, 'commands');
+        $commandsMethod->setAccessible(true);
+        $commands = $commandsMethod->invoke($kernel);
+
+        self::assertIsArray($commands);
+        self::assertContains(VersionShowCommand::class, $commands);
+        self::assertNotContains('App\\Console\\Commands\\QueueStatusCommand', $commands);
+        self::assertSame(1, $kernel->handle(['myxa', 'queue:status', '--quiet']));
     }
 
     public function testRouteCacheCommandWarnsWhenCachingIsDisabled(): void

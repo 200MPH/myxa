@@ -185,3 +185,19 @@ if (!function_exists('myxa_emit_emergency_response')) {
         echo 'Server Error';
     }
 }
+
+if (!function_exists('myxa_emit_console_emergency')) {
+    function myxa_emit_console_emergency(string|\Throwable $error, int $exitCode = 1): never
+    {
+        $message = $error instanceof \Throwable ? trim($error->getMessage()) : trim($error);
+        $message = $message !== '' ? $message : 'Console bootstrap failed.';
+
+        try {
+            @file_put_contents('php://stderr', $message . PHP_EOL, FILE_APPEND);
+        } catch (\Throwable) {
+            // Last-resort console output must never crash the process.
+        }
+
+        exit($exitCode >= 0 ? $exitCode : 1);
+    }
+}
