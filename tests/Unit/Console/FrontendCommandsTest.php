@@ -6,8 +6,8 @@ namespace Test\Unit\Console;
 
 use App\Console\Commands\FrontendInstallCommand;
 use App\Frontend\FrontendInstallService;
-use Myxa\Console\ConsoleInput;
-use Myxa\Console\ConsoleOutput;
+use Myxa\Console\CommandRunner;
+use Myxa\Container\Container;
 use PHPUnit\Framework\Attributes\CoversClass;
 use Test\TestCase;
 
@@ -111,16 +111,41 @@ JSON);
         $stream = fopen('php://temp', 'w+b');
         self::assertIsResource($stream);
 
-        $exitCode = $command->run(
-            new ConsoleInput($name, $parameters, $options),
-            new ConsoleOutput($stream, ansi: false),
-        );
+        $runner = new CommandRunner(new Container(), output: $stream);
+        $runner->register($command);
+        $exitCode = $runner->run($this->argv($name, $parameters, $options));
 
         rewind($stream);
         $output = (string) stream_get_contents($stream);
         fclose($stream);
 
         return [$exitCode, $output];
+    }
+
+    /**
+     * @param array<string, scalar|null> $parameters
+     * @param array<string, scalar|bool|null> $options
+     * @return list<string>
+     */
+    private function argv(string $name, array $parameters, array $options): array
+    {
+        $argv = ['myxa', $name];
+
+        foreach ($parameters as $value) {
+            $argv[] = (string) $value;
+        }
+
+        foreach ($options as $option => $value) {
+            if ($value === true) {
+                $argv[] = '--' . $option;
+
+                continue;
+            }
+
+            $argv[] = sprintf('--%s=%s', $option, (string) $value);
+        }
+
+        return $argv;
     }
 
     private function removeDirectory(string $path): void

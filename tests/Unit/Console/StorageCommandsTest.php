@@ -7,8 +7,8 @@ namespace Test\Unit\Console;
 use App\Config\ConfigRepository;
 use App\Console\Commands\StorageLinkCommand;
 use Myxa\Console\CommandInterface;
-use Myxa\Console\ConsoleInput;
-use Myxa\Console\ConsoleOutput;
+use Myxa\Console\CommandRunner;
+use Myxa\Container\Container;
 use PHPUnit\Framework\Attributes\CoversClass;
 use Test\TestCase;
 
@@ -249,10 +249,9 @@ final class StorageCommandsTest extends TestCase
         $stream = fopen('php://temp', 'w+b');
         self::assertIsResource($stream);
 
-        $exitCode = $command->run(
-            new ConsoleInput($name, [], []),
-            new ConsoleOutput($stream, ansi: false),
-        );
+        $runner = new CommandRunner(new Container(), output: $stream);
+        $runner->register($command);
+        $exitCode = $runner->run(['myxa', $name]);
 
         rewind($stream);
         $output = stream_get_contents($stream);

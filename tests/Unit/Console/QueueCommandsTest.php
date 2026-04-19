@@ -17,8 +17,8 @@ use App\Queue\QueueWorker;
 use App\Queue\SerializedJobCodec;
 use App\Queue\SimpleRetryPolicy;
 use Myxa\Console\CommandInterface;
-use Myxa\Console\ConsoleInput;
-use Myxa\Console\ConsoleOutput;
+use Myxa\Console\CommandRunner;
+use Myxa\Container\Container;
 use PHPUnit\Framework\Attributes\CoversClass;
 use Test\Fixtures\Queue\QueueCommandFailingJob;
 use Test\Fixtures\Queue\QueueCommandRetryableJob;
@@ -219,16 +219,41 @@ final class QueueCommandsTest extends TestCase
         $stream = fopen('php://temp', 'w+b');
         self::assertIsResource($stream);
 
-        $exitCode = $command->run(
-            new ConsoleInput($name, $parameters, $options),
-            new ConsoleOutput($stream, ansi: false),
-        );
+        $runner = new CommandRunner(new Container(), output: $stream);
+        $runner->register($command);
+        $exitCode = $runner->run($this->argv($name, $parameters, $options));
 
         rewind($stream);
         $output = stream_get_contents($stream);
         fclose($stream);
 
         return [$exitCode, is_string($output) ? $output : ''];
+    }
+
+    /**
+     * @param array<string, mixed> $parameters
+     * @param array<string, mixed> $options
+     * @return list<string>
+     */
+    private function argv(string $name, array $parameters, array $options): array
+    {
+        $argv = ['myxa', $name];
+
+        foreach ($parameters as $value) {
+            $argv[] = (string) $value;
+        }
+
+        foreach ($options as $option => $value) {
+            if ($value === true) {
+                $argv[] = '--' . $option;
+
+                continue;
+            }
+
+            $argv[] = sprintf('--%s=%s', $option, (string) $value);
+        }
+
+        return $argv;
     }
 
     private function removeDirectory(string $path): void

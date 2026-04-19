@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Console\Commands;
 
 use App\Config\ConfigRepository;
+use App\Console\Exceptions\CommandFailedException;
 use App\Routing\RouteCache;
 use Myxa\Console\Command;
 
@@ -33,9 +34,7 @@ final class RouteClearCommand extends Command
         }
 
         if (!RouteCache::clear($this->config)) {
-            $this->error('Unable to remove the route cache file.')->icon();
-
-            return 1;
+            throw new CommandFailedException('Unable to remove the route cache file.');
         }
 
         $this->success('Route cache cleared.')->icon();

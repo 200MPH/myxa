@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
+use App\Console\Exceptions\CommandFailedException;
 use App\Queue\InspectableQueueInterface;
 use InvalidArgumentException;
 use Myxa\Console\Command;
@@ -51,21 +52,16 @@ final class QueuePruneFailedCommand extends Command
         $rawAge = $this->stringOption('older-than');
 
         if ($rawAge === null) {
-            $this->error('The [older-than] option is required.')->icon();
-
-            return 1;
+            throw new InvalidArgumentException('The [older-than] option is required.');
         }
 
-        try {
-            $olderThanSeconds = $this->parseAge($rawAge);
-        } catch (InvalidArgumentException $exception) {
-            $this->error($exception->getMessage())->icon();
-
-            return 1;
-        }
-
+        $olderThanSeconds = $this->parseAge($rawAge);
         $pruned = $this->queue->pruneFailed($olderThanSeconds, $queue);
         $label = $queue ?? 'all queues';
+
+        if ($pruned < 0) {
+            throw new CommandFailedException(sprintf('Unable to prune failed jobs from [%s].', $label));
+        }
 
         $this->success(sprintf('Pruned %d failed job(s) from [%s].', $pruned, $label))->icon();
 

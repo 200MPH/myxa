@@ -309,6 +309,62 @@ Route::get('/request-example', static function (): array {
 });
 ```
 
+Uploads use the same request object. `Request::file()` returns normalized `UploadedFile` objects, so the simplest happy-path controller can store the upload directly:
+
+```php
+use Myxa\Http\Request;
+
+final class AvatarController
+{
+    public function store(Request $request): array
+    {
+        $avatar = $request->file('avatar');
+        $stored = $avatar->store('avatars/' . $avatar->name());
+
+        return [
+            'location' => $stored->location(),
+        ];
+    }
+}
+```
+
+The facade is just as direct:
+
+```php
+use Myxa\Support\Facades\Request;
+
+$stored = Request::file('avatar')->store('avatars/john.png');
+```
+
+`Request::rawFile()` still exposes the original PHP `$_FILES` payload when you need it.
+
+For multi-file inputs, `Request::file('photos', [])` returns an array of `UploadedFile` objects:
+
+```php
+use Myxa\Http\Request;
+
+final class GalleryController
+{
+    public function store(Request $request): array
+    {
+        $stored = [];
+
+        foreach ($request->file('photos', []) as $index => $photo) {
+            if (!$photo->isValid()) {
+                continue;
+            }
+
+            $stored[] = $photo->store(
+                sprintf('galleries/photo-%d.%s', $index + 1, $photo->extension()),
+                storage: 'public',
+            )->location();
+        }
+
+        return ['files' => $stored];
+    }
+}
+```
+
 ## Response Helpers
 
 You can return a response object directly:
