@@ -7,7 +7,6 @@
         </a>
 
         <div class="docs-brand-copy">
-            <span class="eyebrow">Myxa Documentation</span>
             <h1>Myxa</h1>
             <p class="docs-brand-note">Version: <span class="docs-brand-version"><?= $_e($appVersion) ?></span></p>
             <p class="lede">
@@ -24,10 +23,6 @@
 
     <section class="docs-header">
         <span class="eyebrow">Documentation</span>
-        <h1><?= $_e($pageTitle) ?></h1>
-        <p class="lede">
-            Practical guides for building with Myxa, from first boot to queues, storage, auth, and hybrid frontend work.
-        </p>
     </section>
 
     <section class="docs-shell">
