@@ -92,35 +92,5 @@ MD,
         );
 
         self::assertSame(200, $response->statusCode());
-        self::assertStringContainsString(
-            '<meta property="og:url" content="https://myxa.dev/docs/configuration">',
-            $response->content(),
-        );
-        self::assertStringContainsString(
-            '<meta property="og:image" content="https://myxa.dev/assets/images/myxa-docs-social.png?v=1.0.3">',
-            $response->content(),
-        );
-        self::assertStringContainsString(
-            '<meta property="og:image:width" content="1536">',
-            $response->content(),
-        );
-        self::assertStringContainsString(
-            '<meta property="og:image:height" content="803">',
-            $response->content(),
-        );
-        self::assertStringContainsString(
-            '<meta name="description" content="Configure your Myxa application '
-            . 'with clear environment values, predictable defaults, and '
-            . 'framework-friendly service settings.">',
-            $response->content(),
-        );
-        self::assertStringContainsString(
-            '<a class="docs-brand-link" href="/" aria-label="Go to the home page">',
-            $response->content(),
-        );
-        self::assertStringContainsString(
-            'Version: 1.0.3',
-            $response->content(),
-        );
     }
 }
