@@ -22,6 +22,7 @@ final class SerializedJobCodec
         string $defaultQueue = 'default',
     ): array {
         $resolvedQueue = $this->resolveQueue($job, $queue, $defaultQueue);
+        $initialDelay = $this->initialDelay($job);
 
         return [
             'id' => $this->generateId(),
@@ -30,7 +31,7 @@ final class SerializedJobCodec
             'job_payload' => $this->encodeValue($job),
             'context_payload' => $this->encodeValue($context),
             'attempts' => 0,
-            'available_at' => time() + $this->initialDelay($job),
+            'available_at' => $initialDelay > 0 ? time() + $initialDelay : 0,
         ];
     }
 
@@ -56,6 +57,8 @@ final class SerializedJobCodec
      */
     public function release(JobEnvelope $message, int $delaySeconds = 0): array
     {
+        $delaySeconds = max(0, $delaySeconds);
+
         return [
             'id' => $message->id,
             'queue' => $message->queue ?? 'default',
@@ -63,7 +66,7 @@ final class SerializedJobCodec
             'job_payload' => $this->encodeValue($message->job),
             'context_payload' => $this->encodeValue($message->context),
             'attempts' => $message->attempts + 1,
-            'available_at' => time() + max(0, $delaySeconds),
+            'available_at' => $delaySeconds > 0 ? time() + $delaySeconds : 0,
         ];
     }
 
@@ -101,7 +104,7 @@ final class SerializedJobCodec
             'job_payload' => $payload['job_payload'] ?? '',
             'context_payload' => $payload['context_payload'] ?? '',
             'attempts' => 0,
-            'available_at' => time(),
+            'available_at' => 0,
         ];
     }
 
