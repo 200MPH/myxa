@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
+use App\Console\Exceptions\CommandFailedException;
 use App\Queue\InspectableQueueInterface;
 use Myxa\Console\Command;
 use Myxa\Console\InputArgument;
@@ -36,9 +37,7 @@ final class QueueForgetFailedCommand extends Command
         $id = (string) $this->parameter('id');
 
         if (!$this->queue->forgetFailed($id)) {
-            $this->error(sprintf('Unable to delete failed job [%s].', $id))->icon();
-
-            return 1;
+            throw new CommandFailedException(sprintf('Unable to delete failed job [%s].', $id));
         }
 
         $this->success(sprintf('Failed job [%s] deleted from the dead-letter store.', $id))->icon();

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
+use App\Console\Exceptions\CommandFailedException;
 use Myxa\Cache\CacheManager;
 use Myxa\Console\Command;
 use Myxa\Console\InputOption;
@@ -39,15 +40,13 @@ final class CacheClearCommand extends Command
 
         try {
             if (!$this->cache->clear($store)) {
-                $this->error(sprintf('Unable to clear cache store [%s].', $resolvedStore))->icon();
-
-                return 1;
+                throw new CommandFailedException(sprintf('Unable to clear cache store [%s].', $resolvedStore));
             }
         } catch (Throwable $exception) {
-            $this->error(sprintf('Unable to clear cache store [%s]: %s', $resolvedStore, $exception->getMessage()))
-                ->icon();
-
-            return 1;
+            throw new CommandFailedException(
+                sprintf('Unable to clear cache store [%s]: %s', $resolvedStore, $exception->getMessage()),
+                previous: $exception,
+            );
         }
 
         $this->success(sprintf('Cache store [%s] cleared.', $resolvedStore))->icon();

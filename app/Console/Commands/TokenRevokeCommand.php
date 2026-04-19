@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Console\Commands;
 
 use App\Auth\TokenManager;
+use App\Console\Exceptions\CommandFailedException;
 use Myxa\Console\Command;
 use Myxa\Console\InputArgument;
 

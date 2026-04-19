@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
+use App\Console\Exceptions\CommandFailedException;
 use App\Maintenance\MaintenanceMode;
 use Myxa\Console\Command;
 use Myxa\Console\InputOption;
@@ -76,12 +77,10 @@ final class MaintenanceOnCommand extends Command
         if (!$this->maintenance->waitForIdleConsole($timeout)) {
             $remaining = $this->maintenance->activeConsoleCommandCount();
 
-            $this->error(sprintf(
+            throw new CommandFailedException(sprintf(
                 'Timed out while waiting for maintenance drain. %d command(s) still active.',
                 $remaining,
-            ))->icon();
-
-            return 1;
+            ));
         }
 
         $this->success('Maintenance drain complete.')->icon();

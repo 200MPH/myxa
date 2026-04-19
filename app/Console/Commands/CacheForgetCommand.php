@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
+use App\Console\Exceptions\CommandFailedException;
 use Myxa\Cache\CacheManager;
 use Myxa\Console\Command;
 use Myxa\Console\InputArgument;
@@ -54,14 +55,12 @@ final class CacheForgetCommand extends Command
                 return 0;
             }
         } catch (Throwable $exception) {
-            $this->error(sprintf(
+            throw new CommandFailedException(sprintf(
                 'Unable to forget cache key [%s] from store [%s]: %s',
                 $key,
                 $resolvedStore,
                 $exception->getMessage(),
-            ))->icon();
-
-            return 1;
+            ), previous: $exception);
         }
 
         $this->success(sprintf('Cache key [%s] forgotten from store [%s].', $key, $resolvedStore))->icon();

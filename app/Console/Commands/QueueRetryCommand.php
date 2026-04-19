@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
+use App\Console\Exceptions\CommandFailedException;
 use App\Queue\InspectableQueueInterface;
 use Myxa\Console\Command;
 use Myxa\Console\InputArgument;
@@ -45,9 +46,7 @@ final class QueueRetryCommand extends Command
         $targetQueue = $this->stringOption('queue');
 
         if (!$this->queue->retryFailed($id, $targetQueue)) {
-            $this->error(sprintf('Unable to retry failed job [%s].', $id))->icon();
-
-            return 1;
+            throw new CommandFailedException(sprintf('Unable to retry failed job [%s].', $id));
         }
 
         $this->success(sprintf('Failed job [%s] moved back to the queue.', $id))->icon();

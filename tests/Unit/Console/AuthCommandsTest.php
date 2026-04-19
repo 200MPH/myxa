@@ -25,8 +25,8 @@ use App\Database\Migrations\MigrationLoader;
 use App\Database\Migrations\MigrationManager;
 use App\Database\Migrations\MigrationRepository;
 use App\Database\Migrations\MigrationScaffolder;
-use Myxa\Console\ConsoleInput;
-use Myxa\Console\ConsoleOutput;
+use Myxa\Console\CommandRunner;
+use Myxa\Container\Container;
 use Myxa\Database\Connection\PdoConnection;
 use Myxa\Database\Connection\PdoConnectionConfig;
 use Myxa\Database\DatabaseManager;
@@ -290,17 +290,15 @@ final class AuthCommandsTest extends TestCase
         self::assertStringContainsString('Plain token:', $createOutput);
         self::assertStringContainsString('users:read, users:*', $createOutput);
 
-        try {
-            $this->runCommand(
-                $tokenCreate,
-                'token:create',
-                ['user' => 'token-owner@example.com'],
-                ['expires' => 'definitely-not-a-date'],
-            );
-            self::fail('Expected invalid expiration to fail.');
-        } catch (\RuntimeException $exception) {
-            self::assertStringContainsString('Invalid token expiration', $exception->getMessage());
-        }
+        [$invalidExpirationExitCode, $invalidExpirationOutput] = $this->runCommand(
+            $tokenCreate,
+            'token:create',
+            ['user' => 'token-owner@example.com'],
+            ['expires' => 'definitely-not-a-date'],
+        );
+
+        self::assertSame(1, $invalidExpirationExitCode);
+        self::assertStringContainsString('Invalid token expiration', $invalidExpirationOutput);
 
         $tokenList = new TokenListCommand($this->tokens, $this->users);
         [$listExitCode, $listOutput] = $this->runCommand(
@@ -369,16 +367,41 @@ final class AuthCommandsTest extends TestCase
         $stream = fopen('php://temp', 'w+b');
         self::assertIsResource($stream);
 
-        $exitCode = $command->run(
-            new ConsoleInput($name, $parameters, $options),
-            new ConsoleOutput($stream, ansi: false),
-        );
+        $runner = new CommandRunner(new Container(), output: $stream);
+        $runner->register($command);
+        $exitCode = $runner->run($this->argv($name, $parameters, $options));
 
         rewind($stream);
         $output = (string) stream_get_contents($stream);
         fclose($stream);
 
         return [$exitCode, $output];
+    }
+
+    /**
+     * @param array<string, mixed> $parameters
+     * @param array<string, mixed> $options
+     * @return list<string>
+     */
+    private function argv(string $name, array $parameters, array $options): array
+    {
+        $argv = ['myxa', $name];
+
+        foreach ($parameters as $value) {
+            $argv[] = (string) $value;
+        }
+
+        foreach ($options as $option => $value) {
+            if ($value === true) {
+                $argv[] = '--' . $option;
+
+                continue;
+            }
+
+            $argv[] = sprintf('--%s=%s', $option, (string) $value);
+        }
+
+        return $argv;
     }
 
     private function makeInMemoryConnection(): PdoConnection

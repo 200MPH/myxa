@@ -47,16 +47,10 @@ final class FrontendInstallCommand extends Command
 
     protected function handle(): int
     {
-        try {
-            $result = $this->frontend->install(
-                (string) $this->parameter('stack', 'vue'),
-                $this->booleanOption('force'),
-            );
-        } catch (InvalidArgumentException $exception) {
-            $this->error($exception->getMessage())->icon();
-
-            return 1;
-        }
+        $result = $this->frontend->install(
+            (string) $this->parameter('stack', 'vue'),
+            $this->booleanOption('force'),
+        );
 
         if ($result['created'] !== []) {
             $this->table(

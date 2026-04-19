@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
+use App\Console\Exceptions\CommandFailedException;
 use App\Maintenance\MaintenanceMode;
 use Myxa\Console\Command;
 
@@ -32,9 +33,7 @@ final class MaintenanceOffCommand extends Command
         }
 
         if (!$this->maintenance->disable()) {
-            $this->error('Unable to remove the maintenance marker file.')->icon();
-
-            return 1;
+            throw new CommandFailedException('Unable to remove the maintenance marker file.');
         }
 
         $this->success('Maintenance mode disabled.')->icon();

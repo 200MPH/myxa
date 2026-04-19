@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Console\Commands;
 
 use App\Config\ConfigRepository;
+use App\Console\Exceptions\CommandFailedException;
 use Myxa\Console\Command;
 
 final class StorageLinkCommand extends Command
@@ -45,27 +46,29 @@ final class StorageLinkCommand extends Command
                 return 0;
             }
 
-            $this->error(sprintf('Storage link [%s] already exists but points somewhere else.', $link))->icon();
-
-            return 1;
+            throw new CommandFailedException(sprintf(
+                'Storage link [%s] already exists but points somewhere else.',
+                $link,
+            ));
         }
 
         if (file_exists($link)) {
-            $this->error(sprintf('Storage link path [%s] already exists and is not a symlink.', $link))->icon();
-
-            return 1;
+            throw new CommandFailedException(sprintf(
+                'Storage link path [%s] already exists and is not a symlink.',
+                $link,
+            ));
         }
 
         if (!is_dir(dirname($link)) && !@mkdir(dirname($link), 0777, true) && !is_dir(dirname($link))) {
-            $this->error(sprintf('Unable to create public directory [%s].', dirname($link)))->icon();
-
-            return 1;
+            throw new CommandFailedException(sprintf('Unable to create public directory [%s].', dirname($link)));
         }
 
         if (!@symlink($target, $link)) {
-            $this->error(sprintf('Unable to create storage symlink from [%s] to [%s].', $link, $target))->icon();
-
-            return 1;
+            throw new CommandFailedException(sprintf(
+                'Unable to create storage symlink from [%s] to [%s].',
+                $link,
+                $target,
+            ));
         }
 
         $this->success(sprintf('Public storage link created at %s', $link))->icon();

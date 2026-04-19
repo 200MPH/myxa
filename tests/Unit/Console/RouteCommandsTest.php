@@ -16,8 +16,8 @@ use App\Config\ConfigRepository;
 use App\Foundation\ApplicationFactory;
 use App\Maintenance\MaintenanceMode;
 use Myxa\Console\CommandInterface;
-use Myxa\Console\ConsoleInput;
-use Myxa\Console\ConsoleOutput;
+use Myxa\Console\CommandRunner;
+use Myxa\Container\Container;
 use PHPUnit\Framework\Attributes\CoversClass;
 use Test\TestCase;
 
@@ -156,18 +156,7 @@ final class RouteCommandsTest extends TestCase
     {
         $app = ApplicationFactory::create(base_path());
         $command = $app->make(MaintenanceOnCommand::class);
-
-        $stream = fopen('php://temp', 'w+b');
-        self::assertIsResource($stream);
-
-        $exitCode = $command->run(
-            new ConsoleInput('maintenance:on', [], ['wait' => true]),
-            new ConsoleOutput($stream, ansi: false),
-        );
-
-        rewind($stream);
-        $output = (string) stream_get_contents($stream);
-        fclose($stream);
+        [$exitCode, $output] = $this->runCommandWithOptions($command, 'maintenance:on', ['wait' => true]);
 
         self::assertSame(0, $exitCode);
         self::assertStringContainsString('Maintenance mode enabled', $output);
@@ -182,17 +171,11 @@ final class RouteCommandsTest extends TestCase
         $maintenance->beginConsoleActivity('queue:work');
 
         $command = $app->make(MaintenanceOnCommand::class);
-        $stream = fopen('php://temp', 'w+b');
-        self::assertIsResource($stream);
-
-        $exitCode = $command->run(
-            new ConsoleInput('maintenance:on', [], ['wait' => true, 'timeout' => 1]),
-            new ConsoleOutput($stream, ansi: false),
+        [$exitCode, $output] = $this->runCommandWithOptions(
+            $command,
+            'maintenance:on',
+            ['wait' => true, 'timeout' => 1],
         );
-
-        rewind($stream);
-        $output = (string) stream_get_contents($stream);
-        fclose($stream);
 
         self::assertSame(1, $exitCode);
         self::assertStringContainsString('Maintenance mode is already enabled.', $output);
@@ -441,13 +424,33 @@ final class RouteCommandsTest extends TestCase
      */
     private function runCommand(CommandInterface $command, string $name): array
     {
+        return $this->runCommandWithOptions($command, $name);
+    }
+
+    /**
+     * @param array<string, mixed> $options
+     * @return array{0: int, 1: string}
+     */
+    private function runCommandWithOptions(CommandInterface $command, string $name, array $options = []): array
+    {
         $stream = fopen('php://temp', 'w+b');
         self::assertIsResource($stream);
 
-        $exitCode = $command->run(
-            new ConsoleInput($name, [], []),
-            new ConsoleOutput($stream, ansi: false),
-        );
+        $runner = new CommandRunner(new Container(), output: $stream);
+        $runner->register($command);
+        $argv = ['myxa', $name];
+
+        foreach ($options as $option => $value) {
+            if ($value === true) {
+                $argv[] = '--' . $option;
+
+                continue;
+            }
+
+            $argv[] = sprintf('--%s=%s', $option, (string) $value);
+        }
+
+        $exitCode = $runner->run($argv);
 
         rewind($stream);
         $output = stream_get_contents($stream);
