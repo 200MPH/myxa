@@ -191,13 +191,37 @@ if (!function_exists('myxa_emit_console_emergency')) {
     {
         $message = $error instanceof \Throwable ? trim($error->getMessage()) : trim($error);
         $message = $message !== '' ? $message : 'Console bootstrap failed.';
+        $hint = myxa_console_hint_for($error);
 
         try {
             @file_put_contents('php://stderr', $message . PHP_EOL, FILE_APPEND);
+
+            if ($hint !== null) {
+                @file_put_contents('php://stderr', 'Hint: ' . $hint . PHP_EOL, FILE_APPEND);
+            }
         } catch (\Throwable) {
             // Last-resort console output must never crash the process.
         }
 
         exit($exitCode >= 0 ? $exitCode : 1);
+    }
+}
+
+if (!function_exists('myxa_console_hint_for')) {
+    function myxa_console_hint_for(string|\Throwable $error): ?string
+    {
+        $message = trim($error instanceof \Throwable ? $error->getMessage() : $error);
+
+        if (
+            preg_match('/^Container entry \[(.+)\] was not found\.$/', $message, $matches) === 1
+            && trim((string) ($matches[1] ?? '')) !== ''
+        ) {
+            return sprintf(
+                'Ensure the service provider responsible for [%s] is registered in config/app.php. If that feature is intentionally disabled, avoid bootstrapping commands that depend on it.',
+                trim((string) $matches[1]),
+            );
+        }
+
+        return null;
     }
 }
