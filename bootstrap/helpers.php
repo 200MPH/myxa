@@ -212,11 +212,12 @@ if (!function_exists('myxa_console_hint_for')) {
 
         if (
             preg_match('/^Container entry \[(.+)\] was not found\.$/', $message, $matches) === 1
-            && trim((string) ($matches[1] ?? '')) !== ''
+            && trim($matches[1]) !== ''
         ) {
             return sprintf(
-                'Ensure the service provider responsible for [%s] is registered in config/app.php. If that feature is intentionally disabled, avoid bootstrapping commands that depend on it.',
-                trim((string) $matches[1]),
+                'Ensure the service provider responsible for [%s] is registered in config/app.php. '
+                . 'If that feature is intentionally disabled, avoid bootstrapping commands that depend on it.',
+                trim($matches[1]),
             );
         }
 

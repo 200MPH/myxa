@@ -163,7 +163,8 @@ final class DocsController
             }
         }
 
-        return 'Practical guides for building with Myxa, from first boot to queues, storage, auth, and hybrid frontend work.';
+        return 'Practical guides for building with Myxa, from first boot to queues, '
+            . 'storage, auth, and hybrid frontend work.';
     }
 
     private function truncate(string $value, int $maxLength): string

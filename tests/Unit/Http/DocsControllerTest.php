@@ -34,7 +34,8 @@ final class DocsControllerTest extends TestCase
             <<<'MD'
 # Configuration
 
-Configure your Myxa application with clear environment values, predictable defaults, and framework-friendly service settings.
+Configure your Myxa application with clear environment values, predictable defaults,
+and framework-friendly service settings.
 
 ## Details
 
@@ -108,7 +109,9 @@ MD,
             $response->content(),
         );
         self::assertStringContainsString(
-            '<meta name="description" content="Configure your Myxa application with clear environment values, predictable defaults, and framework-friendly service settings.">',
+            '<meta name="description" content="Configure your Myxa application '
+            . 'with clear environment values, predictable defaults, and '
+            . 'framework-friendly service settings.">',
             $response->content(),
         );
         self::assertStringContainsString(
