@@ -55,7 +55,7 @@ final class ApplicationBootstrapTest extends TestCase
         self::assertSame('text/html; charset=UTF-8', $homeResponse->header('Content-Type'));
         self::assertStringContainsString('Myxa App is running :-)', $homeResponse->content());
         self::assertStringContainsString('Documentation', $homeResponse->content());
-        self::assertStringContainsString('Version', $homeResponse->content());
+        self::assertStringContainsString('Version:', $homeResponse->content());
         self::assertStringContainsString('Health endpoint', $homeResponse->content());
 
         $docsResponse = $kernel->handle(new Request(server: [
