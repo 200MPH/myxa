@@ -82,7 +82,7 @@ $twitterCard = isset($twitterCard) ? trim((string) $twitterCard) : 'summary';
         }
 
         main {
-            width: min(960px, 100%);
+            width: min(1160px, 100%);
             padding: clamp(1.4rem, 3vw, 2.4rem);
             border: 1px solid var(--panel-border);
             border-radius: 30px;
