@@ -246,12 +246,117 @@ Route::post('/imports', [ImportController::class, 'store'])
 For a fuller auth walkthrough, see [Auth](auth.md).
 For preset and store details, see [Rate Limiting and Throttling](rate-limiting.md).
 
+## Request Examples
+
+You can inject `Myxa\Http\Request` directly into a controller method:
+
+```php
+use Myxa\Http\Request;
+
+final class ProfileController
+{
+    public function show(Request $request): array
+    {
+        return [
+            'method' => $request->method(),
+            'path' => $request->path(),
+            'full_url' => $request->fullUrl(),
+            'ip' => $request->ip(),
+            'expects_json' => $request->expectsJson(),
+        ];
+    }
+}
+```
+
+Read query string, form input, and headers:
+
+```php
+use Myxa\Http\Request;
+use Myxa\Http\Response;
+
+final class SearchController
+{
+    public function index(Request $request): Response
+    {
+        $query = $request->query('q', '');
+        $page = (int) $request->query('page', 1);
+        $token = $request->bearerToken();
+        $tenant = $request->header('X-Tenant', 'public');
+
+        return (new Response())->json([
+            'query' => $query,
+            'page' => $page,
+            'tenant' => $tenant,
+            'has_token' => $token !== null,
+        ]);
+    }
+}
+```
+
+You can also use the request facade in route closures or small handlers:
+
+```php
+use Myxa\Support\Facades\Request;
+use Myxa\Support\Facades\Route;
+
+Route::get('/request-example', static function (): array {
+    return [
+        'method' => Request::method(),
+        'filters' => Request::query(),
+        'input' => Request::input(),
+        'headers' => Request::headers(),
+    ];
+});
+```
+
 ## Response Helpers
 
 You can return a response object directly:
 
 ```php
 return (new Response())->json(['saved' => true], 201);
+```
+
+Set headers, cookies, redirects, and empty responses with the injected response object:
+
+```php
+use Myxa\Http\Response;
+
+final class SessionController
+{
+    public function store(): Response
+    {
+        return (new Response())
+            ->setHeader('X-Request-Source', 'session')
+            ->cookie('session_notice', 'created', path: '/', secure: true, httpOnly: true)
+            ->json(['created' => true], 201);
+    }
+
+    public function destroy(): Response
+    {
+        return (new Response())->noContent();
+    }
+
+    public function redirectToDocs(): Response
+    {
+        return (new Response())->redirect('/docs');
+    }
+}
+```
+
+The response facade is handy in route closures and small endpoint handlers:
+
+```php
+use Myxa\Support\Facades\Response;
+use Myxa\Support\Facades\Route;
+
+Route::post('/imports', static function () {
+    return Response::status(202)
+        ->setHeader('X-Import-Queued', 'yes')
+        ->json([
+            'queued' => true,
+        ]);
+});
 ```
 
 For HTML pages, the app uses `Html` rendering through `AppServiceProvider`:

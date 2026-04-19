@@ -8,4 +8,5 @@ storage/logs/*
 storage/maintenance/*
 storage/sessions/*
 storage/cache/framework/*
+storage/rate-limit/*
 .phpunit.result.cache
