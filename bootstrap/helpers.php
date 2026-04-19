@@ -134,7 +134,6 @@ if (!function_exists('myxa_emergency_log')) {
                 $throwable->getLine(),
             );
             $lines[] = sprintf('Type: %s', $throwable::class);
-            $lines[] = sprintf('Trace: %s', $throwable->getTraceAsString());
         };
 
         if ($error instanceof \Throwable) {
@@ -189,15 +188,14 @@ if (!function_exists('myxa_emit_emergency_response')) {
 if (!function_exists('myxa_emit_console_emergency')) {
     function myxa_emit_console_emergency(string|\Throwable $error, int $exitCode = 1): never
     {
-        $message = $error instanceof \Throwable ? trim($error->getMessage()) : trim($error);
-        $message = $message !== '' ? $message : 'Console bootstrap failed.';
+        $brakeline = PHP_EOL;
+        $brakeline .= PHP_EOL;
         $hint = myxa_console_hint_for($error);
 
         try {
-            @file_put_contents('php://stderr', $message . PHP_EOL, FILE_APPEND);
-
             if ($hint !== null) {
-                @file_put_contents('php://stderr', 'Hint: ' . $hint . PHP_EOL, FILE_APPEND);
+                @file_put_contents('php://stderr', $brakeline, FILE_APPEND);
+                @file_put_contents('php://stderr', 'Hint: ' . PHP_EOL . $hint, FILE_APPEND);
             }
         } catch (\Throwable) {
             // Last-resort console output must never crash the process.
