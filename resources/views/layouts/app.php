@@ -235,6 +235,11 @@ $twitterCard = isset($twitterCard) ? trim((string) $twitterCard) : 'summary';
             line-height: 1.7;
         }
 
+        .docs-brand-version {
+            color: #fde68a;
+            font-weight: 700;
+        }
+
         .docs-header {
             display: grid;
             gap: 0.85rem;

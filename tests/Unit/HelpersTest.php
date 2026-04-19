@@ -104,4 +104,15 @@ final class HelpersTest extends TestCase
 
         self::assertSame('Server Error', $text);
     }
+
+    public function testConsoleHintExplainsMissingContainerEntriesGenerically(): void
+    {
+        self::assertSame(
+            'Ensure the service provider responsible for [App\\Queue\\InspectableQueueInterface] '
+            . 'is registered in config/app.php. If that feature is intentionally disabled, '
+            . 'avoid bootstrapping commands that depend on it.',
+            myxa_console_hint_for('Container entry [App\Queue\InspectableQueueInterface] was not found.'),
+        );
+        self::assertNull(myxa_console_hint_for('Something else failed.'));
+    }
 }
