@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Config\ConfigRepository;
 use App\Docs\DocsCatalog;
 use App\Docs\MarkdownRenderer;
+use App\Version\ApplicationVersion;
 use InvalidArgumentException;
 use Myxa\Http\Request;
 use Myxa\Http\Response;
@@ -17,6 +18,7 @@ final class DocsController
     public function index(
         Request $request,
         ConfigRepository $config,
+        ApplicationVersion $version,
         Html $html,
         DocsCatalog $docs,
         MarkdownRenderer $markdown,
@@ -27,24 +29,26 @@ final class DocsController
             return $this->notFound($html, 'No documentation pages are available right now.');
         }
 
-        return $this->renderDoc($slug, $request, $config, $html, $docs, $markdown);
+        return $this->renderDoc($slug, $request, $config, $version, $html, $docs, $markdown);
     }
 
     public function show(
         string $page,
         Request $request,
         ConfigRepository $config,
+        ApplicationVersion $version,
         Html $html,
         DocsCatalog $docs,
         MarkdownRenderer $markdown,
     ): Response {
-        return $this->renderDoc($page, $request, $config, $html, $docs, $markdown);
+        return $this->renderDoc($page, $request, $config, $version, $html, $docs, $markdown);
     }
 
     private function renderDoc(
         string $page,
         Request $request,
         ConfigRepository $config,
+        ApplicationVersion $version,
         Html $html,
         DocsCatalog $docs,
         MarkdownRenderer $markdown,
@@ -63,6 +67,7 @@ final class DocsController
         $metaDescription = $this->descriptionFromMarkdown($document['markdown']);
         $pageUrl = $request->url();
         $appName = (string) $config->get('app.name', 'Myxa App');
+        $appVersion = $version->current();
         $content = $html->renderPage(
             'pages/docs',
             [
@@ -76,7 +81,10 @@ final class DocsController
                 'title' => sprintf('Docs | %s', $pageTitle),
                 'faviconPath' => '/assets/images/myxa-mark.svg',
                 'metaDescription' => $metaDescription,
-                'metaImage' => $this->absoluteUrl($request, '/assets/images/myxa-docs-social.png'),
+                'metaImage' => $this->absoluteUrl(
+                    $request,
+                    sprintf('/assets/images/myxa-docs-social.png?v=%s', rawurlencode($appVersion)),
+                ),
                 'metaImageAlt' => sprintf('%s documentation social preview', $appName),
                 'metaImageWidth' => '1536',
                 'metaImageHeight' => '803',
