@@ -284,7 +284,7 @@ final class FileQueue implements InspectableQueueInterface
         }
 
         $recovered = 0;
-        $now = time();
+        $cutoff = time() - $this->visibilityTimeoutSeconds;
 
         foreach (glob($this->reservedDirectory() . '/*.json') ?: [] as $path) {
             $payload = $this->readJson($path);
@@ -296,14 +296,14 @@ final class FileQueue implements InspectableQueueInterface
 
             $reservedAt = is_numeric($payload['reserved_at'] ?? null)
                 ? (int) $payload['reserved_at']
-                : ((int) filemtime($path) ?: $now);
+                : ((int) filemtime($path) ?: $cutoff);
 
-            if (($reservedAt + $this->visibilityTimeoutSeconds) > $now) {
+            if ($reservedAt > $cutoff) {
                 continue;
             }
 
             unset($payload['reserved_at']);
-            $payload['available_at'] = $now;
+            $payload['available_at'] = 0;
             unlink($path);
             $this->writeJson($this->pendingPath($payload), $payload);
             $recovered++;
