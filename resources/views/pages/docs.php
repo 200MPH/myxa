@@ -1,8 +1,10 @@
 <main class="docs-page">
     <section class="docs-brand">
-        <div class="docs-brand-mark">
-            <img src="/assets/images/myxa-logo.svg" alt="Myxa logo">
-        </div>
+        <a class="docs-brand-link" href="/" aria-label="Go to the home page">
+            <div class="docs-brand-mark">
+                <img src="/assets/images/myxa-logo.svg" alt="Myxa logo">
+            </div>
+        </a>
 
         <div class="docs-brand-copy">
             <span class="eyebrow">Myxa Documentation</span>

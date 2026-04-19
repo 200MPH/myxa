@@ -1,3 +1,17 @@
+<?php
+
+declare(strict_types=1);
+
+$metaDescription = isset($metaDescription) ? trim((string) $metaDescription) : '';
+$metaUrl = isset($metaUrl) ? trim((string) $metaUrl) : '';
+$metaImage = isset($metaImage) ? trim((string) $metaImage) : '';
+$metaImageAlt = isset($metaImageAlt) ? trim((string) $metaImageAlt) : '';
+$metaImageWidth = isset($metaImageWidth) ? trim((string) $metaImageWidth) : '';
+$metaImageHeight = isset($metaImageHeight) ? trim((string) $metaImageHeight) : '';
+$metaSiteName = isset($metaSiteName) ? trim((string) $metaSiteName) : '';
+$metaType = isset($metaType) ? trim((string) $metaType) : 'website';
+$twitterCard = isset($twitterCard) ? trim((string) $twitterCard) : 'summary';
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,6 +19,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= $_e($title) ?></title>
     <link rel="icon" type="image/svg+xml" href="<?= $_e($faviconPath) ?>">
+    <?php if ($metaDescription !== '') : ?>
+    <meta name="description" content="<?= $_e($metaDescription) ?>">
+    <meta property="og:description" content="<?= $_e($metaDescription) ?>">
+    <meta name="twitter:description" content="<?= $_e($metaDescription) ?>">
+    <?php endif; ?>
+    <meta property="og:title" content="<?= $_e($title) ?>">
+    <meta name="twitter:title" content="<?= $_e($title) ?>">
+    <meta property="og:type" content="<?= $_e($metaType) ?>">
+    <meta name="twitter:card" content="<?= $_e($twitterCard) ?>">
+    <?php if ($metaSiteName !== '') : ?>
+    <meta property="og:site_name" content="<?= $_e($metaSiteName) ?>">
+    <?php endif; ?>
+    <?php if ($metaUrl !== '') : ?>
+    <link rel="canonical" href="<?= $_e($metaUrl) ?>">
+    <meta property="og:url" content="<?= $_e($metaUrl) ?>">
+    <?php endif; ?>
+    <?php if ($metaImage !== '') : ?>
+    <meta property="og:image" content="<?= $_e($metaImage) ?>">
+    <meta name="twitter:image" content="<?= $_e($metaImage) ?>">
+    <?php if ($metaImageWidth !== '') : ?>
+    <meta property="og:image:width" content="<?= $_e($metaImageWidth) ?>">
+    <?php endif; ?>
+    <?php if ($metaImageHeight !== '') : ?>
+    <meta property="og:image:height" content="<?= $_e($metaImageHeight) ?>">
+    <?php endif; ?>
+    <?php endif; ?>
+    <?php if ($metaImageAlt !== '') : ?>
+    <meta property="og:image:alt" content="<?= $_e($metaImageAlt) ?>">
+    <meta name="twitter:image:alt" content="<?= $_e($metaImageAlt) ?>">
+    <?php endif; ?>
     <style>
         :root {
             color-scheme: dark;
@@ -164,6 +208,11 @@
             box-shadow:
                 inset 0 1px 0 rgba(255, 255, 255, 0.7),
                 0 20px 45px rgba(15, 23, 42, 0.2);
+        }
+
+        .docs-brand-link {
+            color: inherit;
+            text-decoration: none;
         }
 
         .docs-brand-mark img {

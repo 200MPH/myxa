@@ -4,15 +4,19 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Config\ConfigRepository;
 use App\Docs\DocsCatalog;
 use App\Docs\MarkdownRenderer;
 use InvalidArgumentException;
+use Myxa\Http\Request;
 use Myxa\Http\Response;
 use Myxa\Support\Html\Html;
 
 final class DocsController
 {
     public function index(
+        Request $request,
+        ConfigRepository $config,
         Html $html,
         DocsCatalog $docs,
         MarkdownRenderer $markdown,
@@ -23,20 +27,24 @@ final class DocsController
             return $this->notFound($html, 'No documentation pages are available right now.');
         }
 
-        return $this->renderDoc($slug, $html, $docs, $markdown);
+        return $this->renderDoc($slug, $request, $config, $html, $docs, $markdown);
     }
 
     public function show(
         string $page,
+        Request $request,
+        ConfigRepository $config,
         Html $html,
         DocsCatalog $docs,
         MarkdownRenderer $markdown,
     ): Response {
-        return $this->renderDoc($page, $html, $docs, $markdown);
+        return $this->renderDoc($page, $request, $config, $html, $docs, $markdown);
     }
 
     private function renderDoc(
         string $page,
+        Request $request,
+        ConfigRepository $config,
         Html $html,
         DocsCatalog $docs,
         MarkdownRenderer $markdown,
@@ -51,18 +59,31 @@ final class DocsController
             return $this->notFound($html, sprintf('The docs page "%s" was not found.', $page));
         }
 
+        $pageTitle = $document['title'];
+        $metaDescription = $this->descriptionFromMarkdown($document['markdown']);
+        $pageUrl = $request->url();
+        $appName = (string) $config->get('app.name', 'Myxa App');
         $content = $html->renderPage(
             'pages/docs',
             [
                 'docs' => $docs->all(),
                 'activeSlug' => $document['slug'],
                 'content' => $markdown->render($document['markdown']),
-                'pageTitle' => $document['title'],
+                'pageTitle' => $pageTitle,
             ],
             'layouts/app',
             [
-                'title' => sprintf('Docs | %s', $document['title']),
+                'title' => sprintf('Docs | %s', $pageTitle),
                 'faviconPath' => '/assets/images/myxa-mark.svg',
+                'metaDescription' => $metaDescription,
+                'metaImage' => $this->absoluteUrl($request, '/assets/images/myxa-docs-social.png'),
+                'metaImageAlt' => sprintf('%s documentation social preview', $appName),
+                'metaImageWidth' => '1536',
+                'metaImageHeight' => '803',
+                'metaSiteName' => $appName,
+                'metaType' => 'article',
+                'metaUrl' => $pageUrl,
+                'twitterCard' => 'summary_large_image',
             ],
         );
 
@@ -97,5 +118,58 @@ final class DocsController
         );
 
         return (new Response())->html($content, 404);
+    }
+
+    private function absoluteUrl(Request $request, string $path): string
+    {
+        $authority = $request->host();
+        $port = $request->port();
+        $defaultPort = $request->secure() ? 443 : 80;
+
+        if ($port !== null && $port !== $defaultPort) {
+            $authority .= ':' . $port;
+        }
+
+        return sprintf('%s://%s/%s', $request->scheme(), $authority, ltrim($path, '/'));
+    }
+
+    private function descriptionFromMarkdown(string $markdown): string
+    {
+        $blocks = preg_split('/\R\s*\R/', trim($markdown)) ?: [];
+
+        foreach ($blocks as $block) {
+            $candidate = trim($block);
+
+            if ($candidate === '' || preg_match('/^(#{1,6}\s+|```|>\s?|[-*]\s+|\d+\.\s+)/', $candidate) === 1) {
+                continue;
+            }
+
+            $candidate = preg_replace('/\[(.*?)\]\((.*?)\)/', '$1', $candidate) ?? $candidate;
+            $candidate = str_replace(['`', '**', '__', '*', '_'], '', $candidate);
+            $candidate = preg_replace('/\s+/', ' ', $candidate) ?? $candidate;
+            $candidate = trim($candidate);
+
+            if ($candidate !== '') {
+                return $this->truncate($candidate, 200);
+            }
+        }
+
+        return 'Practical guides for building with Myxa, from first boot to queues, storage, auth, and hybrid frontend work.';
+    }
+
+    private function truncate(string $value, int $maxLength): string
+    {
+        if (strlen($value) <= $maxLength) {
+            return $value;
+        }
+
+        $truncated = substr($value, 0, $maxLength - 1);
+        $lastSpace = strrpos($truncated, ' ');
+
+        if ($lastSpace !== false && $lastSpace >= (int) floor($maxLength * 0.6)) {
+            $truncated = substr($truncated, 0, $lastSpace);
+        }
+
+        return rtrim($truncated, " \t\n\r\0\x0B.,;:!?") . '…';
     }
 }
