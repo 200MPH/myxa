@@ -392,6 +392,90 @@ $twitterCard = isset($twitterCard) ? trim((string) $twitterCard) : 'summary';
             color: #99f6e4;
         }
 
+        @media (max-width: 859px) {
+            body {
+                padding: 0.85rem;
+            }
+
+            main {
+                border-radius: 24px;
+                padding: 1rem;
+            }
+
+            .docs-page {
+                gap: 1rem;
+            }
+
+            .docs-brand,
+            .docs-sidebar,
+            .docs-content {
+                padding: 0.9rem;
+                border-radius: 18px;
+            }
+
+            .docs-brand {
+                gap: 1rem;
+            }
+
+            .docs-brand-link,
+            .docs-brand-mark {
+                width: 100%;
+            }
+
+            .docs-brand-mark img {
+                width: min(100%, 220px);
+            }
+
+            .docs-header {
+                gap: 0.7rem;
+            }
+
+            .docs-shell {
+                gap: 0.9rem;
+            }
+
+            .docs-sidebar strong {
+                margin-bottom: 0.65rem;
+            }
+
+            .docs-nav {
+                grid-auto-flow: column;
+                grid-auto-columns: minmax(180px, 78%);
+                overflow-x: auto;
+                overflow-y: hidden;
+                padding-bottom: 0.2rem;
+                margin: 0 -0.15rem;
+                padding-inline: 0.15rem;
+                scroll-snap-type: x proximity;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .docs-nav-link {
+                min-height: 100%;
+                scroll-snap-align: start;
+            }
+
+            .docs-prose h1 {
+                font-size: clamp(1.6rem, 7vw, 2.1rem);
+            }
+
+            .docs-prose h2 {
+                font-size: clamp(1.2rem, 5.5vw, 1.55rem);
+            }
+
+            .docs-prose p,
+            .docs-prose li,
+            .docs-prose blockquote {
+                font-size: 0.98rem;
+                line-height: 1.65;
+            }
+
+            .docs-prose pre {
+                padding: 0.85rem;
+                border-radius: 14px;
+            }
+        }
+
         @media (min-width: 860px) {
             .docs-brand {
                 grid-template-columns: minmax(240px, 320px) minmax(0, 1fr);
