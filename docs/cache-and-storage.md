@@ -196,7 +196,32 @@ final class ReportController
 
 ## Uploads
 
-Example upload:
+The simplest path is `Request::file(...)->store(...)`:
+
+```php
+use Myxa\Support\Facades\Request;
+
+$stored = Request::file('document')->store('documents/report.pdf');
+```
+
+A simple controller version looks like:
+
+```php
+use Myxa\Http\Request;
+
+final class DocumentController
+{
+    public function store(Request $request): array
+    {
+        $document = $request->file('document');
+        $stored = $document->store('documents/' . $document->name());
+
+        return ['location' => $stored->location()];
+    }
+}
+```
+
+`Storage::upload()` is still handy when you want the storage facade to handle the upload directly:
 
 ```php
 use Myxa\Support\Facades\Request;
@@ -208,6 +233,39 @@ $stored = Storage::upload(
     ['allowed_extensions' => ['pdf']],
     'public',
 );
+```
+
+If you need the original PHP upload payload instead of the normalized `UploadedFile`, use `Request::rawFile()`:
+
+```php
+$rawDocument = Request::rawFile('document');
+```
+
+For multi-file uploads, loop over `Request::file('documents', [])` and store each `UploadedFile` individually:
+
+```php
+use Myxa\Http\Request;
+
+final class ArchiveController
+{
+    public function store(Request $request): array
+    {
+        $locations = [];
+
+        foreach ($request->file('documents', []) as $document) {
+            if (!$document->isValid()) {
+                continue;
+            }
+
+            $locations[] = $document->store(
+                'archives/' . $document->name(),
+                storage: 'public',
+            )->location();
+        }
+
+        return ['documents' => $locations];
+    }
+}
 ```
 
 ## Public File URLs
