@@ -115,5 +115,9 @@ MD,
             '<a class="docs-brand-link" href="/" aria-label="Go to the home page">',
             $response->content(),
         );
+        self::assertStringContainsString(
+            'Version: 1.0.3',
+            $response->content(),
+        );
     }
 }
