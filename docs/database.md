@@ -311,6 +311,73 @@ Behavior:
 
 That is useful for things like password hashes, helper state, computed flags, or other non-persisted internals.
 
+## Casting
+
+Models support property-level casts through the `#[Cast(...)]` attribute.
+
+Built-in cast types supported by the core framework today:
+
+- `CastType::DateTime`
+- `CastType::DateTimeImmutable`
+- `CastType::Json`
+
+```php
+use DateTimeImmutable;
+use Myxa\Database\Attributes\Cast;
+use Myxa\Database\Model\CastType;
+
+final class User extends Model
+{
+    protected string $table = 'users';
+
+    protected ?int $id = null;
+    protected string $email = '';
+
+    #[Cast(CastType::DateTimeImmutable, format: DATE_ATOM)]
+    protected ?DateTimeImmutable $created_at = null;
+
+    #[Cast(CastType::DateTimeImmutable, format: DATE_ATOM)]
+    protected ?DateTimeImmutable $updated_at = null;
+}
+```
+
+Behavior:
+
+- hydrated string values are cast into `DateTime` or `DateTimeImmutable`
+- hydrated JSON strings are decoded when using `CastType::Json`
+- existing `DateTimeInterface` values are normalized to the declared cast type
+- `null` values are left as `null`
+- serialized output converts datetime values back to strings
+- JSON-cast attributes stay decoded in `toArray()` and model JSON serialization
+- SQL persistence stores JSON-cast attributes as JSON strings
+- the cast format controls datetime parsing and serialization
+- invalid values throw an `InvalidArgumentException` instead of being silently coerced
+
+Example with both datetime and JSON casts:
+
+```php
+use DateTimeImmutable;
+use Myxa\Database\Attributes\Cast;
+use Myxa\Database\Model\CastType;
+
+final class Event extends Model
+{
+    protected string $table = 'events';
+
+    #[Cast(CastType::DateTimeImmutable, format: DATE_ATOM)]
+    protected ?DateTimeImmutable $published_at = null;
+
+    #[Cast(CastType::Json)]
+    protected ?array $payload = null;
+}
+```
+
+Notes:
+
+- `CastType::Json` is the right choice for JSON-backed array properties
+- reverse-engineered models can generate `#[Cast(CastType::Json)]` for SQL `json` columns
+- manual JSON helpers are still fine when a model wants a more specific API than a raw decoded array
+
 ## Declared Fields vs Extra Hydrated Columns
 
 Normal writes are strict, but hydrated rows may still contain additional columns from trusted storage data.
@@ -510,6 +577,7 @@ The same strict declared-property idea still applies:
 - document fields should be declared as real properties
 - unknown attributes are rejected during normal writes
 - guarded, hidden, internal, and cast attributes still apply
+- built-in casts currently include `DateTime`, `DateTimeImmutable`, and `Json`
 
 Typical usage:
 
@@ -552,6 +620,8 @@ This project does not scaffold Mongo connections yet, so treat this as a framewo
 - Prefer declared properties on models. They are the real attribute contract, not just documentation.
 - Unknown attributes are rejected during normal writes such as `fill()` and `setAttribute()`.
 - Use nullable properties or defaults for fields that may be absent.
+- Use `#[Cast(...)]` for datetime properties when you want model hydration and serialization to round-trip them as objects.
+- Use `#[Cast(CastType::Json)]` for JSON-backed array properties when you want hydration to decode them and persistence to store them as JSON strings.
 - Use `#[Guarded]`, `#[Hidden]`, and `#[Internal]` deliberately so model serialization and persistence stay predictable.
 - Use the query builder when you want SQL generation but not a full model.
 - Use reverse-engineering commands as bootstrap tools, then continue migration-first.
