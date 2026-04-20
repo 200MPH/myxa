@@ -15,7 +15,9 @@ COPY docker/php/php.dev.ini /usr/local/etc/php/myxa/php.dev.ini
 COPY docker/php/php.prod.ini /usr/local/etc/php/myxa/php.prod.ini
 COPY docker/php/docker-entrypoint.sh /usr/local/bin/myxa-php-entrypoint
 
-RUN chmod +x /usr/local/bin/myxa-php-entrypoint
+RUN chmod +x /usr/local/bin/myxa-php-entrypoint \
+    && touch /usr/local/etc/php/conf.d/zz-myxa.ini \
+    && chmod 666 /usr/local/etc/php/conf.d/zz-myxa.ini
 
 WORKDIR /var/www/html
 
