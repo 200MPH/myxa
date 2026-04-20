@@ -148,6 +148,15 @@ final class AuthServicesTest extends TestCase
             'create_personal_access_tokens_table',
             'create_user_sessions_table',
         ], $second['skipped']);
+
+        $createdBasenames = array_map(static fn (string $path): string => basename($path), $first['created']);
+        $sortedBasenames = $createdBasenames;
+        sort($sortedBasenames);
+
+        self::assertSame($sortedBasenames, $createdBasenames);
+        self::assertStringContainsString('create_users_table.php', $createdBasenames[0]);
+        self::assertStringContainsString('create_personal_access_tokens_table.php', $createdBasenames[1]);
+        self::assertStringContainsString('create_user_sessions_table.php', $createdBasenames[2]);
     }
 
     public function testAuthConfigExposesSessionAndTokenSettings(): void

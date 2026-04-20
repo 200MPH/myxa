@@ -187,6 +187,30 @@ final class InfrastructureProvidersTest extends TestCase
         self::assertSame($manager, $app->make('db'));
     }
 
+    public function testDatabaseProviderRegistersSqliteConnectionsWithoutExplicitHost(): void
+    {
+        $app = new Application();
+        $app->instance(ConfigRepository::class, new ConfigRepository([
+            'database' => [
+                'default' => 'sqlite',
+                'connections' => [
+                    'sqlite' => [
+                        'driver' => 'sqlite',
+                        'database' => ':memory:',
+                    ],
+                ],
+            ],
+        ]));
+
+        $app->register(DatabaseServiceProvider::class);
+        $app->boot();
+
+        $manager = $app->make(DatabaseManager::class);
+
+        self::assertSame('sqlite', $manager->getDefaultConnection());
+        self::assertTrue($manager->hasConnection('sqlite'));
+    }
+
     public function testDatabaseProviderDirectRegisterAndBootExposeFacadeManager(): void
     {
         $app = new Application();
