@@ -9,6 +9,8 @@ use RuntimeException;
 
 final class MigrationScaffolder
 {
+    private static int $lastGeneratedTimestamp = 0;
+
     /**
      * Generate timestamped migration files using project naming conventions.
      */
@@ -51,7 +53,7 @@ final class MigrationScaffolder
 
         $path = rtrim($directory, DIRECTORY_SEPARATOR)
             . DIRECTORY_SEPARATOR
-            . date('Y_m_d_His')
+            . date('Y_m_d_His', $this->nextTimestamp())
             . '_'
             . Naming::snake($name)
             . '.php';
@@ -65,6 +67,19 @@ final class MigrationScaffolder
         }
 
         return $path;
+    }
+
+    private function nextTimestamp(): int
+    {
+        $current = time();
+
+        if ($current <= self::$lastGeneratedTimestamp) {
+            $current = self::$lastGeneratedTimestamp + 1;
+        }
+
+        self::$lastGeneratedTimestamp = $current;
+
+        return $current;
     }
 
     private function source(?string $className, ?string $createTable, ?string $table, ?string $connection): string

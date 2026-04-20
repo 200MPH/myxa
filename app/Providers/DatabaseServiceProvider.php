@@ -31,6 +31,10 @@ final class DatabaseServiceProvider extends ServiceProvider
             $database = (string) ($connection['database'] ?? '');
             $host = (string) ($connection['host'] ?? '');
 
+            if ($driver === 'sqlite' && $host === '') {
+                $host = 'localhost';
+            }
+
             if ($driver === '' || $database === '' || $host === '') {
                 continue;
             }
