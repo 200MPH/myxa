@@ -105,6 +105,16 @@ final class HelpersTest extends TestCase
         self::assertSame('Server Error', $text);
     }
 
+    public function testMissingDependenciesMessageSuggestsComposerInstall(): void
+    {
+        $message = myxa_missing_dependencies_message('/tmp/myxa/vendor/autoload.php');
+
+        self::assertStringContainsString('Application dependencies are not installed.', $message);
+        self::assertStringContainsString('/tmp/myxa/vendor/autoload.php', $message);
+        self::assertStringContainsString('composer install', $message);
+        self::assertStringContainsString('docker compose exec app composer install', $message);
+    }
+
     public function testConsoleHintExplainsMissingContainerEntriesGenerically(): void
     {
         self::assertSame(
