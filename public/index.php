@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 require_once dirname(__DIR__) . '/bootstrap/helpers.php';
-require_once base_path('vendor/autoload.php');
+myxa_require_vendor_autoload();
 
 if (class_exists(\App\Foundation\Environment::class)) {
     \App\Foundation\Environment::load(base_path('.env'));

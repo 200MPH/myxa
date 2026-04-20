@@ -159,6 +159,76 @@ if (!function_exists('myxa_emergency_log')) {
     }
 }
 
+if (!function_exists('myxa_missing_dependencies_message')) {
+    function myxa_missing_dependencies_message(?string $missingPath = null): string
+    {
+        $missingPath ??= base_path('vendor/autoload.php');
+
+        return sprintf(
+            'Application dependencies are not installed.' . PHP_EOL
+            . 'Missing file: %s' . PHP_EOL . PHP_EOL
+            . 'Run `composer install` in the project root.' . PHP_EOL
+            . 'If you are using Docker, run `docker compose exec app composer install`.',
+            $missingPath,
+        );
+    }
+}
+
+if (!function_exists('myxa_require_vendor_autoload')) {
+    function myxa_require_vendor_autoload(bool $console = false): void
+    {
+        $autoloadPath = base_path('vendor/autoload.php');
+
+        if (is_file($autoloadPath)) {
+            require_once $autoloadPath;
+
+            return;
+        }
+
+        $message = myxa_missing_dependencies_message($autoloadPath);
+
+        myxa_emergency_log($message);
+
+        if ($console) {
+            try {
+                @file_put_contents('php://stderr', $message . PHP_EOL, FILE_APPEND);
+            } catch (\Throwable) {
+                // Console fallback must never crash the process.
+            }
+
+            exit(1);
+        }
+
+        $expectsJson = myxa_request_expects_json();
+
+        if (!headers_sent()) {
+            http_response_code(500);
+            header(sprintf(
+                'Content-Type: %s',
+                $expectsJson ? 'application/json; charset=UTF-8' : 'text/plain; charset=UTF-8',
+            ), true);
+        }
+
+        if ($expectsJson) {
+            $payload = json_encode([
+                'error' => [
+                    'type' => 'missing_dependencies',
+                    'message' => $message,
+                    'status' => 500,
+                ],
+            ]);
+
+            echo is_string($payload)
+                ? $payload
+                : '{"error":{"type":"missing_dependencies","message":"Application dependencies are not installed.","status":500}}';
+        } else {
+            echo $message;
+        }
+
+        exit(1);
+    }
+}
+
 if (!function_exists('myxa_emit_emergency_response')) {
     function myxa_emit_emergency_response(int $statusCode = 500, ?bool $expectsJson = null): void
     {
