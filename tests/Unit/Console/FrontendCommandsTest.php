@@ -76,6 +76,12 @@ JSON);
         self::assertFileExists($this->rootPath . '/resources/frontend/components/CounterWidget.vue');
         self::assertFileExists($this->rootPath . '/public/assets/frontend/.gitignore');
 
+        $viteConfig = (string) file_get_contents($this->rootPath . '/vite.config.mjs');
+        self::assertStringContainsString('publicDir: false', $viteConfig);
+        self::assertStringContainsString('emptyOutDir: false', $viteConfig);
+        self::assertStringContainsString("'process.env.NODE_ENV'", $viteConfig);
+        self::assertStringContainsString('APP_ENV', $viteConfig);
+
         $packageJson = (string) file_get_contents($this->rootPath . '/package.json');
         self::assertStringContainsString('"frontend:build": "vite build"', $packageJson);
         self::assertStringContainsString('"frontend:watch": "vite build --watch"', $packageJson);

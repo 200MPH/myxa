@@ -73,6 +73,14 @@ class FrontendPackageInstaller
             ];
         }
 
+        if (is_file('/.dockerenv')) {
+            throw new RuntimeException(
+                'npm was not found inside the Docker app container. '
+                . 'Rebuild the app image with `docker compose up --build -d`, '
+                . 'or run `./myxa frontend:install vue --npm` from the host shell.',
+            );
+        }
+
         throw new RuntimeException(
             'npm was not found, and Docker is not available for a temporary Node container.',
         );
