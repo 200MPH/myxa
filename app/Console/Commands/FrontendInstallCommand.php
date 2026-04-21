@@ -5,15 +5,21 @@ declare(strict_types=1);
 namespace App\Console\Commands;
 
 use App\Frontend\FrontendInstallService;
-use InvalidArgumentException;
+use App\Frontend\FrontendPackageInstaller;
 use Myxa\Console\Command;
 use Myxa\Console\InputArgument;
 use Myxa\Console\InputOption;
+use RuntimeException;
 
 final class FrontendInstallCommand extends Command
 {
-    public function __construct(private readonly FrontendInstallService $frontend)
-    {
+    private readonly FrontendPackageInstaller $packages;
+
+    public function __construct(
+        private readonly FrontendInstallService $frontend,
+        ?FrontendPackageInstaller $packages = null,
+    ) {
+        $this->packages = $packages ?? new FrontendPackageInstaller();
     }
 
     public function name(): string
@@ -42,6 +48,10 @@ final class FrontendInstallCommand extends Command
     {
         return [
             new InputOption('force', 'Overwrite managed scaffold files when they already exist.'),
+            new InputOption(
+                'npm',
+                'Run npm install after scaffolding. Uses native npm or a temporary Docker Node container.',
+            ),
         ];
     }
 
@@ -77,9 +87,27 @@ final class FrontendInstallCommand extends Command
             $this->warning($warning)->icon();
         }
 
-        $this->success(
-            'Frontend install complete. Run `npm install` and `npm run frontend:build` next.',
-        )->icon();
+        if ($this->booleanOption('npm')) {
+            $this->info('Installing npm packages...')->icon();
+
+            try {
+                $npm = $this->packages->install(
+                    fn (string $line): null => $this->writeProcessLine($line),
+                );
+            } catch (RuntimeException $exception) {
+                $this->error($exception->getMessage())->icon();
+
+                return 1;
+            }
+
+            $this->success(sprintf('npm packages installed with %s.', $npm['strategy']))->icon();
+            $this->success('Frontend install complete. Run `npm run frontend:build` next.')->icon();
+        } else {
+            $this->success(
+                'Frontend install complete. Run `npm install` and `npm run frontend:build` next.',
+            )->icon();
+        }
+
         $this->info('Use `npm run frontend:watch` for iterative hybrid frontend work.')->icon();
 
         return 0;
@@ -88,5 +116,12 @@ final class FrontendInstallCommand extends Command
     private function booleanOption(string $name): bool
     {
         return $this->option($name, false) === true;
+    }
+
+    private function writeProcessLine(string $line): null
+    {
+        $this->output($line)->send();
+
+        return null;
     }
 }

@@ -1,41 +1,67 @@
 # Frontend
 
-This project is backend-first, but it can scaffold a hybrid Vue frontend when you want richer client-side interactions inside server-rendered pages.
+Myxa is backend-first. The optional frontend setup adds Vue and Vite for hybrid widgets inside server-rendered pages.
 
-## Install Vue Hybrid Mode
+## Install
 
-Run:
+Install the Vue frontend scaffold:
+
+```bash
+./myxa frontend:install vue --npm
+```
+
+If you prefer to run npm yourself:
 
 ```bash
 ./myxa frontend:install vue
+npm install
 ```
 
-Then install the Node dependencies and build the bundle:
+When using an existing Docker app container from before Node/npm was added to the image, rebuild it once:
 
 ```bash
-npm install
+docker compose up --build -d
+```
+
+## Build
+
+Build the browser bundle:
+
+```bash
 npm run frontend:build
 ```
 
-For ongoing local work, you can also use:
+During local work, keep Vite watching:
 
 ```bash
 npm run frontend:watch
 ```
 
-The install command scaffolds:
+Inside Docker:
 
-- `package.json` frontend scripts and Vue/Vite dev dependencies
-- `vite.config.mjs`
-- `resources/frontend/app.js`
-- `resources/frontend/components/CounterWidget.vue`
-- a safe bundle include in `resources/views/layouts/app.php`
+```bash
+docker compose exec -it app npm run frontend:watch
+```
 
-The bundle is only loaded when `public/assets/frontend/app.js` exists, so the backend-first default flow remains intact until you actually build the frontend assets.
+The app layout loads Vue only when this file exists:
 
-## Hybrid Mount Pattern
+```text
+public/assets/frontend/app.js
+```
 
-The generated Vue entrypoint scans for elements that declare a component name:
+## Test Page
+
+Open:
+
+```text
+https://myxa.localhost/vue-test
+```
+
+This diagnostic page tells you whether the frontend is not installed, not built, or mounted correctly.
+
+## Mount Vue
+
+Add a mount element to any server-rendered view:
 
 ```php
 <div
@@ -47,14 +73,15 @@ The generated Vue entrypoint scans for elements that declare a component name:
 ></div>
 ```
 
-That keeps routing, layout, auth, and most rendering in PHP while letting Vue enhance specific parts of the page.
+The generated entrypoint in `resources/frontend/app.js` scans for `data-vue-component` and mounts registered Vue components.
 
-## Recommended Approach
+## Generated Files
 
-For this project, hybrid mode is the best fit:
+`frontend:install` manages:
 
-- server-rendered views stay fast and simple
-- Vue can own interactive widgets or complex admin screens
-- you avoid turning the main app into a full SPA
-
-If a product eventually becomes SPA-heavy, it is usually cleaner to move that frontend into a separate repo or a dedicated API-first app.
+- `package.json`
+- `vite.config.mjs`
+- `resources/frontend/app.js`
+- `resources/frontend/components/CounterWidget.vue`
+- `public/assets/frontend/.gitignore`
+- the frontend bundle include in `resources/views/layouts/app.php`

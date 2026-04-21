@@ -2,7 +2,7 @@ FROM php:8.4-fpm-alpine
 
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
 
-RUN apk add --no-cache bash git unzip \
+RUN apk add --no-cache bash git nodejs npm unzip \
     && apk add --no-cache --virtual .build-deps $PHPIZE_DEPS \
     && docker-php-ext-install -j"$(nproc)" mysqli pdo_mysql opcache \
     && pecl install redis pcov \

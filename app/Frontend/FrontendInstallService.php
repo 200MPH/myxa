@@ -209,9 +209,13 @@ final class FrontendInstallService
 
         $snippet = <<<PHP
 
-<?php if (is_file(public_path('assets/frontend/app.js'))): ?>
+<?php if (is_file(public_path('assets/frontend/app.js'))) : ?>
+<?php \$frontendAssetVersion = (string) filemtime(public_path('assets/frontend/app.js')); ?>
 <!-- MYXA_FRONTEND_BUNDLE -->
-<script type="module" src="/assets/frontend/app.js"></script>
+<script
+    type="module"
+    src="/assets/frontend/app.js?v=<?= \$_e(\$frontendAssetVersion) ?>"
+></script>
 <?php endif; ?>
 PHP;
 
@@ -279,14 +283,35 @@ PHP;
     {
         return <<<'JS'
 import path from 'node:path';
+import fs from 'node:fs';
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 
+function appEnv() {
+  const envPath = path.resolve(__dirname, '.env');
+
+  if (!fs.existsSync(envPath)) {
+    return process.env.APP_ENV ?? 'production';
+  }
+
+  const match = fs
+    .readFileSync(envPath, 'utf8')
+    .match(/^APP_ENV=(.*)$/m);
+
+  return match?.[1]?.trim().replace(/^["']|["']$/g, '') || process.env.APP_ENV || 'production';
+}
+
+const nodeEnv = appEnv() === 'production' ? 'production' : 'development';
+
 export default defineConfig({
   plugins: [vue()],
+  publicDir: false,
+  define: {
+    'process.env.NODE_ENV': JSON.stringify(nodeEnv),
+  },
   build: {
     outDir: 'public/assets/frontend',
-    emptyOutDir: true,
+    emptyOutDir: false,
     lib: {
       entry: path.resolve(__dirname, 'resources/frontend/app.js'),
       formats: ['es'],

@@ -6,6 +6,7 @@ namespace Test\Unit\Console;
 
 use App\Console\Commands\FrontendInstallCommand;
 use App\Frontend\FrontendInstallService;
+use App\Frontend\FrontendPackageInstaller;
 use Myxa\Console\CommandRunner;
 use Myxa\Container\Container;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -13,6 +14,7 @@ use Test\TestCase;
 
 #[CoversClass(FrontendInstallCommand::class)]
 #[CoversClass(FrontendInstallService::class)]
+#[CoversClass(FrontendPackageInstaller::class)]
 final class FrontendCommandsTest extends TestCase
 {
     private string $rootPath;
@@ -63,6 +65,7 @@ JSON);
         );
         self::assertSame('stack', $command->parameters()[0]->name());
         self::assertSame('force', $command->options()[0]->name());
+        self::assertSame('npm', $command->options()[1]->name());
 
         [$exitCode, $output] = $this->runCommand($command, 'frontend:install', ['stack' => 'vue']);
 
@@ -72,6 +75,12 @@ JSON);
         self::assertFileExists($this->rootPath . '/resources/frontend/app.js');
         self::assertFileExists($this->rootPath . '/resources/frontend/components/CounterWidget.vue');
         self::assertFileExists($this->rootPath . '/public/assets/frontend/.gitignore');
+
+        $viteConfig = (string) file_get_contents($this->rootPath . '/vite.config.mjs');
+        self::assertStringContainsString('publicDir: false', $viteConfig);
+        self::assertStringContainsString('emptyOutDir: false', $viteConfig);
+        self::assertStringContainsString("'process.env.NODE_ENV'", $viteConfig);
+        self::assertStringContainsString('APP_ENV', $viteConfig);
 
         $packageJson = (string) file_get_contents($this->rootPath . '/package.json');
         self::assertStringContainsString('"frontend:build": "vite build"', $packageJson);
@@ -95,6 +104,63 @@ JSON);
 
         self::assertSame(1, $exitCode);
         self::assertStringContainsString('Unsupported frontend stack [react].', $output);
+    }
+
+    public function testFrontendInstallCommandCanRunNpmInstall(): void
+    {
+        $installer = new FrontendPackageInstaller(
+            $this->rootPath,
+            static fn (array $command, string $cwd, ?callable $output): array => match ($command) {
+                ['npm', '--version'] => ['exitCode' => 0, 'stdout' => '10.0.0', 'stderr' => ''],
+                ['npm', 'install'] => ['exitCode' => 0, 'stdout' => 'installed', 'stderr' => ''],
+                default => ['exitCode' => 127, 'stdout' => '', 'stderr' => 'missing'],
+            },
+        );
+        $command = new FrontendInstallCommand(new FrontendInstallService($this->rootPath), $installer);
+
+        [$exitCode, $output] = $this->runCommand(
+            $command,
+            'frontend:install',
+            ['stack' => 'vue'],
+            ['npm' => true],
+        );
+
+        self::assertSame(0, $exitCode);
+        self::assertStringContainsString('Installing npm packages...', $output);
+        self::assertStringContainsString('npm packages installed with native npm.', $output);
+    }
+
+    public function testFrontendPackageInstallerFallsBackToDockerWhenNpmIsMissing(): void
+    {
+        $commands = [];
+        $installer = new FrontendPackageInstaller(
+            $this->rootPath,
+            static function (array $command, string $cwd, ?callable $output) use (&$commands): array {
+                $commands[] = $command;
+
+                if ($command === ['npm', '--version']) {
+                    return ['exitCode' => 127, 'stdout' => '', 'stderr' => 'missing'];
+                }
+
+                if ($command === ['docker', '--version']) {
+                    return ['exitCode' => 0, 'stdout' => 'Docker version 27.0.0', 'stderr' => ''];
+                }
+
+                if (($command[0] ?? null) === 'docker' && in_array('node:22-alpine', $command, true)) {
+                    return ['exitCode' => 0, 'stdout' => 'installed', 'stderr' => ''];
+                }
+
+                return ['exitCode' => 127, 'stdout' => '', 'stderr' => 'missing'];
+            },
+        );
+
+        $result = $installer->install();
+
+        self::assertSame('Docker', $result['strategy']);
+        self::assertSame(['npm', '--version'], $commands[0]);
+        self::assertSame(['docker', '--version'], $commands[1]);
+        self::assertSame('docker', $commands[2][0]);
+        self::assertContains('node:22-alpine', $commands[2]);
     }
 
     /**
