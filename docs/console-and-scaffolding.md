@@ -144,11 +144,13 @@ Options:
 
 - `vue`: the supported hybrid frontend stack to scaffold right now
 - `--force`: overwrite managed frontend scaffold files when they already exist
+- `--npm`: run `npm install` after scaffolding, using native npm or a temporary Docker Node container
 
 More examples:
 
 ```bash
 ./myxa frontend:install vue --force
+./myxa frontend:install vue --npm
 npm run frontend:watch
 ```
 

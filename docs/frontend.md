@@ -17,6 +17,20 @@ npm install
 npm run frontend:build
 ```
 
+You can have Myxa run the package install step for you:
+
+```bash
+./myxa frontend:install vue --npm
+```
+
+With `--npm`, Myxa uses `npm install` when npm is available in the current environment. If you are running natively and npm is missing, it falls back to a temporary Docker Node container when Docker is available. The Docker app image includes Node/npm, so the normal `./myxa` Docker path can run the install inside the app container.
+
+If you already had the Docker app container built before this feature was added, rebuild it once:
+
+```bash
+docker compose up --build -d
+```
+
 For ongoing local work, you can also use:
 
 ```bash
