@@ -12,6 +12,8 @@ services:
     environment:
       APP_ENV: ${APP_ENV:-local}
       APP_DEBUG: ${APP_DEBUG:-true}
+      COMPOSER_HOME: /tmp/composer
+      COMPOSER_CACHE_DIR: /tmp/composer/cache
       DB_CONNECTION: mysql
       DB_HOST: db
       DB_PORT: 3306
