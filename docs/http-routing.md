@@ -415,6 +415,32 @@ Route::post('/imports', static function () {
 });
 ```
 
+Streaming responses are useful for large exports, server-sent events, and cursor-backed model output:
+
+```php
+use App\Models\User;
+use Myxa\Http\StreamWriterInterface;
+use Myxa\Support\Facades\Response;
+use Myxa\Support\Facades\Route;
+
+Route::get('/users.ndjson', static function () {
+    return Response::streaming(
+        static function (StreamWriterInterface $stream): void {
+            foreach (User::query()->orderBy('id')->cursor() as $user) {
+                $stream->write(json_encode($user->toArray(), JSON_THROW_ON_ERROR) . "\n");
+            }
+        },
+        headers: [
+            'Content-Type' => 'application/x-ndjson',
+            'Cache-Control' => 'no-cache',
+            'X-Accel-Buffering' => 'no',
+        ],
+    );
+});
+```
+
+The stream callback receives a `StreamWriterInterface`. Calling `write()` echoes the chunk and flushes it, so controller code does not need to call `ob_flush()` or `flush()` directly.
+
 For HTML pages, the app uses `Html` rendering through `AppServiceProvider`:
 
 ```php
