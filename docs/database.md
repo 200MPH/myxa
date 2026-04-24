@@ -124,6 +124,51 @@ $posts = Post::query()
     ->get();
 ```
 
+Streaming large result sets:
+
+```php
+foreach (User::query()
+    ->where('status', '=', 'active')
+    ->orderBy('id')
+    ->cursor() as $user) {
+    // $user is a hydrated User model.
+}
+```
+
+You can also stream every record directly from the model, with optional limit and offset arguments:
+
+```php
+foreach (User::cursor(limit: 500) as $user) {
+    // Handle one model at a time.
+}
+```
+
+Batch processing:
+
+```php
+User::query()
+    ->where('status', '=', 'active')
+    ->orderBy('id')
+    ->chunk(100, function (array $users, int $page): void {
+        foreach ($users as $user) {
+            // Handle a batch of hydrated User models.
+        }
+    });
+```
+
+Return `false` from the chunk callback to stop processing early:
+
+```php
+$completed = User::chunk(100, function (array $users, int $page): bool {
+    // Stop after the first batch.
+    return false;
+});
+
+// $completed === false
+```
+
+Use a stable `orderBy()` when chunking records so each batch is predictable.
+
 Eager loading:
 
 ```php
