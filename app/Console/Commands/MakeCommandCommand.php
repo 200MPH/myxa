@@ -12,7 +12,7 @@ use Myxa\Console\InputOption;
 final class MakeCommandCommand extends Command
 {
     /**
-     * Scaffold a new console command class and register it in the kernel.
+     * Scaffold a new console command class for auto-discovery.
      */
     public function __construct(private readonly CommandScaffolder $scaffolder)
     {
@@ -25,7 +25,7 @@ final class MakeCommandCommand extends Command
 
     public function description(): string
     {
-        return 'Generate a new console command class and register it.';
+        return 'Generate a new auto-discovered console command class.';
     }
 
     public function parameters(): array

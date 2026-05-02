@@ -30,8 +30,6 @@ Built-in CLI options:
 - `--quiet`
 - `--version`
 
-## Command Categories
-
 ## Maintenance and Versioning
 
 - `maintenance:on`: put the app into maintenance mode.
@@ -53,14 +51,6 @@ Examples:
 
 - `cache:clear`: clear one cache store or the default cache store.
 - `cache:forget`: remove one cache key from a store.
-- `queue:failed`: list failed jobs currently in the DLQ.
-- `queue:flush-failed`: delete all failed jobs, optionally for one queue.
-- `queue:forget-failed`: delete one failed job from the DLQ by id.
-- `queue:prune-failed`: delete failed jobs older than a given age such as `7d`.
-- `queue:retry`: move one failed job back onto a live queue.
-- `queue:retry-all`: move many failed jobs back onto a live queue.
-- `queue:status`: show queue counts and operational state.
-- `queue:work`: run a worker that consumes queued jobs.
 - `route:cache`: compile and write the route cache manifest.
 - `route:clear`: remove the compiled route cache manifest.
 - `storage:link`: create the public storage symlink for browser-accessible files.
@@ -71,13 +61,29 @@ Examples:
 ./myxa cache:clear
 ./myxa cache:forget users:123
 ./myxa cache:clear --store=local
+./myxa route:cache
+./myxa storage:link
+```
+
+## Queues
+
+- `queue:failed`: list failed jobs currently in the DLQ.
+- `queue:flush-failed`: delete all failed jobs, optionally for one queue.
+- `queue:forget-failed`: delete one failed job from the DLQ by id.
+- `queue:prune-failed`: delete failed jobs older than a given age such as `7d`.
+- `queue:retry`: move one failed job back onto a live queue.
+- `queue:retry-all`: move many failed jobs back onto a live queue.
+- `queue:status`: show queue counts and operational state.
+- `queue:work`: run a worker that consumes queued jobs.
+
+Examples:
+
+```bash
 ./myxa queue:status
 ./myxa queue:work --once
 ./myxa queue:retry job-123
 ./myxa queue:retry-all
 ./myxa queue:prune-failed --older-than=7d
-./myxa route:cache
-./myxa storage:link
 ```
 
 Useful queue command notes:

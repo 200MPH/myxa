@@ -156,6 +156,12 @@ Practical guidance:
 - `--once` and short `--max-idle` values are most useful in development, CI, or ephemeral worker setups
 - `--max-jobs` can be useful in production too when you want workers to recycle periodically
 
+Useful queue command notes:
+
+- `queue:work --once` is handy for local debugging because it processes one job and exits
+- `queue:work <queue> --sleep=1 --max-idle=5` is a good pattern for short-lived workers
+- `queue:work <queue> --max-jobs=500` is useful when you want long-running workers to recycle periodically
+
 Inspect queues:
 
 ```bash
@@ -190,10 +196,10 @@ The failed-job store acts as the project DLQ.
 Important DLQ command differences:
 
 - `queue:retry <id>` -> retry one failed job
-- `queue:retry-all` -> bulk retry failed jobs
+- `queue:retry-all [queue]` -> retry many failed jobs
 - `queue:forget-failed <id>` -> delete one failed job from the DLQ
-- `queue:flush-failed` -> delete every failed job, optionally limited to one queue
-- `queue:prune-failed --older-than=7d` -> delete only old failed jobs
+- `queue:flush-failed [queue]` -> delete all failed jobs for that scope
+- `queue:prune-failed [queue] --older-than=7d` -> delete only old failed jobs
 
 `queue:prune-failed` supports age suffixes:
 

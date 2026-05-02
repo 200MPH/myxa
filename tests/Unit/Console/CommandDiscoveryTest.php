@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Test\Unit\Console;
 
 use App\Console\CommandDiscovery;
+use Myxa\Console\CommandInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
+use RuntimeException;
 use Test\TestCase;
 
 #[CoversClass(CommandDiscovery::class)]
@@ -13,14 +15,17 @@ final class CommandDiscoveryTest extends TestCase
 {
     private string $commandsPath;
 
+    private string $namespace;
+
     protected function setUp(): void
     {
         parent::setUp();
 
         $rootPath = sys_get_temp_dir() . '/myxa-command-discovery-' . uniqid('', true);
         $this->commandsPath = $rootPath . '/app/Console/Commands';
+        $this->namespace = 'TestGeneratedCommands' . str_replace('.', '', uniqid('', true));
 
-        mkdir($this->commandsPath . '/Nested', 0777, true);
+        mkdir($this->commandsPath . '/Admin', 0777, true);
     }
 
     protected function tearDown(): void
@@ -30,22 +35,22 @@ final class CommandDiscoveryTest extends TestCase
         parent::tearDown();
     }
 
-    public function testDiscoverFindsConcreteCommandClassesRecursively(): void
+    public function testDiscoverReturnsConcreteCommandClassesInPathOrder(): void
     {
-        file_put_contents($this->commandsPath . '/AlphaProbeCommand.php', <<<'PHP'
+        $this->writePhpFile('AlphaCommand.php', sprintf(<<<'PHP'
 <?php
 
 declare(strict_types=1);
 
-namespace App\Console\Commands;
+namespace %s;
 
 use Myxa\Console\Command;
 
-final class AlphaProbeCommand extends Command
+final class AlphaCommand extends Command
 {
     public function name(): string
     {
-        return 'alpha:probe';
+        return 'alpha';
     }
 
     protected function handle(): int
@@ -53,22 +58,22 @@ final class AlphaProbeCommand extends Command
         return 0;
     }
 }
-PHP);
+PHP, $this->namespace));
 
-        file_put_contents($this->commandsPath . '/Nested/BetaSweepCommand.php', <<<'PHP'
+        $this->writePhpFile('Admin/SyncUsersCommand.php', sprintf(<<<'PHP'
 <?php
 
 declare(strict_types=1);
 
-namespace App\Console\Commands\Nested;
+namespace %s\Admin;
 
 use Myxa\Console\Command;
 
-final class BetaSweepCommand extends Command
+final class SyncUsersCommand extends Command
 {
     public function name(): string
     {
-        return 'beta:sweep';
+        return 'admin:sync-users';
     }
 
     protected function handle(): int
@@ -76,69 +81,98 @@ final class BetaSweepCommand extends Command
         return 0;
     }
 }
-PHP);
+PHP, $this->namespace));
 
-        file_put_contents($this->commandsPath . '/Nested/Helper.php', <<<'PHP'
+        $this->writePhpFile('Helper.php', sprintf(<<<'PHP'
 <?php
 
 declare(strict_types=1);
 
-namespace App\Console\Commands\Nested;
+namespace %s;
 
 final class Helper
 {
 }
-PHP);
+PHP, $this->namespace));
 
-        $discovery = new CommandDiscovery($this->commandsPath);
+        $commands = (new CommandDiscovery($this->commandsPath, $this->namespace))->discover();
 
         self::assertSame([
-            'App\\Console\\Commands\\AlphaProbeCommand',
-            'App\\Console\\Commands\\Nested\\BetaSweepCommand',
-        ], $discovery->discover());
+            $this->namespace . '\\Admin\\SyncUsersCommand',
+            $this->namespace . '\\AlphaCommand',
+        ], $commands);
+    }
+
+    public function testDiscoverSkipsAbstractCommands(): void
+    {
+        $this->writePhpFile('BaseCommand.php', sprintf(<<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+namespace %s;
+
+use Myxa\Console\Command;
+
+abstract class BaseCommand extends Command
+{
+}
+PHP, $this->namespace));
+
+        self::assertSame([], (new CommandDiscovery($this->commandsPath, $this->namespace))->discover());
     }
 
     public function testDiscoverReturnsEmptyArrayWhenCommandsDirectoryIsMissing(): void
     {
-        $discovery = new CommandDiscovery($this->commandsPath . '/Missing');
-
-        self::assertSame([], $discovery->discover());
+        self::assertSame([], (new CommandDiscovery($this->commandsPath . '/Missing', $this->namespace))->discover());
     }
 
-    public function testDiscoverThrowsWhenCommandClassDoesNotExist(): void
+    public function testDiscoverRejectsMissingCommandClasses(): void
     {
-        file_put_contents($this->commandsPath . '/GhostCommand.php', <<<'PHP'
+        $this->writePhpFile('GhostCommand.php', sprintf(<<<'PHP'
 <?php
 
 declare(strict_types=1);
-PHP);
 
-        $discovery = new CommandDiscovery($this->commandsPath);
+namespace %s;
+PHP, $this->namespace));
 
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('was not found for file');
-        $discovery->discover();
+
+        (new CommandDiscovery($this->commandsPath, $this->namespace))->discover();
     }
 
-    public function testDiscoverThrowsWhenCommandClassDoesNotImplementInterface(): void
+    public function testDiscoverRejectsCommandClassesThatDoNotImplementTheContract(): void
     {
-        file_put_contents($this->commandsPath . '/BrokenCommand.php', <<<'PHP'
+        $this->writePhpFile('BrokenCommand.php', sprintf(<<<'PHP'
 <?php
 
 declare(strict_types=1);
 
-namespace App\Console\Commands;
+namespace %s;
 
 final class BrokenCommand
 {
 }
-PHP);
+PHP, $this->namespace));
 
-        $discovery = new CommandDiscovery($this->commandsPath);
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage(CommandInterface::class);
 
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('must implement');
-        $discovery->discover();
+        (new CommandDiscovery($this->commandsPath, $this->namespace))->discover();
+    }
+
+    private function writePhpFile(string $relativePath, string $source): void
+    {
+        $path = $this->commandsPath . '/' . $relativePath;
+        $directory = dirname($path);
+
+        if (!is_dir($directory)) {
+            mkdir($directory, 0777, true);
+        }
+
+        file_put_contents($path, $source);
     }
 
     private function removeDirectory(string $path): void
