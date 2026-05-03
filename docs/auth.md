@@ -237,6 +237,6 @@ Recommendation:
 
 ## Related Guides
 
-- [HTTP, Routing, Controllers, and Middleware](http-routing.md)
+- [HTTP Routing](http-routing.md)
 - [Configuration](configuration.md)
 - [Console and Scaffolding](console-and-scaffolding.md)

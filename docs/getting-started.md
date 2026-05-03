@@ -303,7 +303,7 @@ If route caching is enabled, clear it:
 
 - [Configuration](configuration.md)
 - [Console and Scaffolding](console-and-scaffolding.md)
-- [HTTP, Routing, Controllers, and Middleware](http-routing.md)
+- [HTTP Routing](http-routing.md)
 - [Auth](auth.md)
 - [Validation](validation.md)
 - [Rate Limiting and Throttling](rate-limiting.md)

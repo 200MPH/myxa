@@ -384,4 +384,5 @@ Use `config/*.php` for:
 
 - [Getting Started](getting-started.md)
 - [Events, Listeners, and Services](events-and-services.md)
-- [Cache and Storage](cache-and-storage.md)
+- [Cache](cache.md)
+- [Storage](storage.md)

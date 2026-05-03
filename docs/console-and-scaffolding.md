@@ -474,6 +474,7 @@ config/maintenance.php
 
 ## Further Reading
 
-- [HTTP, Routing, Controllers, and Middleware](http-routing.md)
-- [Database, Query Builder, Models, and Migrations](database.md)
+- [HTTP Routing](http-routing.md)
+- [Database](database.md)
+- [Database Migrations](database-migrations.md)
 - [Events, Listeners, and Services](events-and-services.md)
