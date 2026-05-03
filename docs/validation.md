@@ -2,43 +2,17 @@
 
 Validation is built into the framework and already registered by the app through `FrameworkServiceProvider`.
 
-The main difference from Laravel is the style: Myxa uses a fluent validation API instead of string rule lists like `'required|email|max:255'`.
-
-## What It Looks Like
-
-Create a validator from the shared facade:
+Myxa uses a fluent validation API:
 
 ```php
-use Myxa\Support\Facades\Validator;
-
-$validator = Validator::make([
-    'name' => 'Jane',
-    'email' => 'jane@example.com',
-]);
-
-$validator->field('name')->required()->string()->min(2)->max(50);
 $validator->field('email')->required()->string()->email()->max(255);
 ```
 
-Then either inspect the result:
+That keeps rules explicit while avoiding string rule lists such as `'required|email|max:255'`.
 
-```php
-if ($validator->fails()) {
-    $errors = $validator->errors();
-} else {
-    $validated = $validator->validated();
-}
-```
+## Quick Example
 
-Or throw on failure:
-
-```php
-$validated = $validator->validate();
-```
-
-## Recommended Controller Pattern
-
-For typical request validation, keep it explicit and let `validate()` fail fast:
+For typical request validation, create a validator from `$request->all()`, define the expected fields, call `validate()`, then use the validated data:
 
 ```php
 use Myxa\Http\Request;
@@ -58,7 +32,10 @@ final class UserController
         $validated = $validator->validate();
 
         return $response->json([
-            'validated' => $validated,
+            'user' => [
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+            ],
         ], 201);
     }
 }
@@ -66,7 +43,23 @@ final class UserController
 
 The app exception flow already handles `ValidationException`, so you usually do not need a local `try/catch` around `validate()`.
 
-That is a little more explicit than Laravel form requests, but it is also very direct and easy to trace.
+## Checking Manually
+
+Use `fails()` when you want to keep full control over the error response:
+
+```php
+if ($validator->fails()) {
+    $errors = $validator->errors();
+} else {
+    $validated = $validator->validated();
+}
+```
+
+Use `validate()` when you want the app exception flow to handle validation errors:
+
+```php
+$validated = $validator->validate();
+```
 
 ## Common Fluent Rules
 
@@ -97,7 +90,7 @@ The `min()` and `max()` meaning depends on the value type:
 
 ## Nested Fields and Array Items
 
-The validator now supports nested array validation through field segments.
+The validator supports nested array validation through field segments.
 
 In app code, that means:
 
@@ -247,7 +240,7 @@ Use `validate()` when:
 - you want the app exception flow to handle `ValidationException`
 - the controller action is simple and API-oriented
 
-## Mental Model For Laravel Developers
+## Laravel Comparison
 
 If you come from Laravel, the closest translation is:
 
@@ -256,9 +249,8 @@ If you come from Laravel, the closest translation is:
 - Laravel `validated()` -> Myxa `validated()` or `validate()`
 - Laravel form requests -> explicit validator setup inside your action or service
 
-So the validation layer is leaner, but not smaller in capability for everyday app work.
-
 ## Related Guides
 
-- [HTTP, Routing, Controllers, and Middleware](http-routing.md)
-- [Database, Query Builder, Models, and Migrations](database.md)
+- [HTTP Routing](http-routing.md)
+- [Configuration](configuration.md)
+- [Database Models and Queries](database-models.md)

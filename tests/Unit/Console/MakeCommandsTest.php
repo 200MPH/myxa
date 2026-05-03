@@ -132,7 +132,7 @@ PHP);
         $command = new MakeCommandCommand(new CommandScaffolder($this->rootPath . '/app/Console/Commands'));
 
         self::assertSame('make:command', $command->name());
-        self::assertSame('Generate a new console command class and register it.', $command->description());
+        self::assertSame('Generate a new auto-discovered console command class.', $command->description());
         self::assertSame('name', $command->parameters()[0]->name());
         self::assertSame('command', $command->options()[0]->name());
         self::assertSame('description', $command->options()[1]->name());

@@ -1,32 +1,61 @@
 # Events, Listeners, and Services
 
-This project includes both an event system and a standard provider/container setup for registering your own services.
+Use events when one part of the app needs to announce that something happened.
+Use services and providers when you want reusable app behavior registered in the container.
+
+These belong together because listeners, controllers, commands, and other services can all receive container-injected dependencies.
+
+## Quick Example
+
+Generate an event:
+
+```bash
+./myxa make:event UserRegistered
+```
+
+Generate a listener and register it for that event:
+
+```bash
+./myxa make:listener SendWelcomeEmail --event=UserRegistered
+```
+
+Dispatch the event:
+
+```php
+use App\Events\UserRegistered;
+use Myxa\Support\Facades\Event;
+
+Event::dispatch(new UserRegistered(1, 'john@example.com'));
+```
+
+The current event bus is synchronous, so listeners run during the `dispatch()` call.
 
 ## Events and Listeners
 
-Event classes live under:
+Event classes live in:
 
 ```text
 app/Events
 ```
 
-Listener classes live under:
+Listener classes live in:
 
 ```text
 app/Listeners
 ```
 
-Generate an event:
+Generate events:
 
 ```bash
 ./myxa make:event UserRegistered
 ./myxa make:event Auth/UserLoggedIn
 ```
 
-Generate a listener:
+Generate listeners:
 
 ```bash
 ./myxa make:listener SendWelcomeEmail
+./myxa make:listener Auth/TrackLogin
 ```
 
 Generate and auto-register a listener for an event:
@@ -42,9 +71,9 @@ When you pass `--event`, the generator updates:
 app/Providers/EventServiceProvider.php
 ```
 
-## Event Example
+## Event Classes
 
-Example event:
+Event classes usually extend `AbstractEvent`:
 
 ```php
 use Myxa\Events\AbstractEvent;
@@ -60,9 +89,12 @@ final readonly class UserRegistered extends AbstractEvent
 }
 ```
 
-Example listener:
+## Listener Classes
+
+Listeners implement `EventHandlerInterface`:
 
 ```php
+use App\Events\UserRegistered;
 use Myxa\Events\EventHandlerInterface;
 use Myxa\Events\EventInterface;
 
@@ -79,12 +111,29 @@ final class SendWelcomeEmailListener implements EventHandlerInterface
 }
 ```
 
-Dispatch the event:
+Listeners are resolved through the container, so they can receive services in their constructor:
 
 ```php
-use Myxa\Support\Facades\Event;
+use App\Events\UserRegistered;
+use App\Services\Mailer;
+use Myxa\Events\EventHandlerInterface;
+use Myxa\Events\EventInterface;
 
-Event::dispatch(new UserRegistered(1, 'john@example.com'));
+final class SendWelcomeEmailListener implements EventHandlerInterface
+{
+    public function __construct(private readonly Mailer $mailer)
+    {
+    }
+
+    public function handle(EventInterface $event): void
+    {
+        if (!$event instanceof UserRegistered) {
+            return;
+        }
+
+        $this->mailer->welcome($event->email);
+    }
+}
 ```
 
 ## Manual Listener Registration
@@ -103,9 +152,11 @@ protected function listeners(): array
 }
 ```
 
+`EventServiceProvider` is the source of truth for event-to-listener mapping.
+
 ## How Events Are Processed
 
-The current event bus is:
+The event bus is:
 
 - synchronous
 - container-aware
@@ -113,14 +164,15 @@ The current event bus is:
 
 That means:
 
-- the dispatch call runs listeners immediately
+- `Event::dispatch(...)` runs listeners immediately
 - listener classes are resolved through the container
+- listeners are mapped by event class name
 
-## Registering Services
+If a listener does slow work, dispatch a queued job from the listener instead of doing all of the work inline.
+
+## Services and Providers
 
 For small app-level bindings, `AppServiceProvider` is the easiest place to start.
-
-Example:
 
 ```php
 use Myxa\Support\ServiceProvider;
@@ -144,7 +196,7 @@ The container supports:
 - `singleton()` for shared services
 - `instance()` for already-built values
 
-## When to Create a New Provider
+## Dedicated Providers
 
 Use `AppServiceProvider` when:
 
@@ -157,7 +209,7 @@ Create a dedicated provider when:
 - the setup has its own configuration
 - you want a clearer boundary, such as cache, storage, auth, or rate limiting
 
-Example dedicated provider:
+Example provider:
 
 ```php
 use Myxa\Support\ServiceProvider;
@@ -172,7 +224,7 @@ final class ReportsServiceProvider extends ServiceProvider
 }
 ```
 
-Then register it in:
+Register it in:
 
 ```php
 // config/app.php
@@ -191,7 +243,7 @@ Once a service is registered, you can inject it into:
 - listeners
 - other services
 
-Example controller:
+Controller example:
 
 ```php
 final class ReportController
@@ -202,7 +254,7 @@ final class ReportController
 }
 ```
 
-Example command:
+Command example:
 
 ```php
 final class SendReportCommand extends Command
@@ -213,11 +265,9 @@ final class SendReportCommand extends Command
 }
 ```
 
-## Container Resolution Rules
-
 Concrete classes often do not need manual registration if they can be autowired.
 
-Still, explicit bindings are useful when:
+Explicit bindings are useful when:
 
 - you want an interface mapped to an implementation
 - you need shared singleton state
@@ -225,12 +275,14 @@ Still, explicit bindings are useful when:
 
 ## Notes
 
-- The project already uses dedicated providers for cache, storage, auth, redis, rate limiting, events, and routes.
-- `EventServiceProvider` is the source of truth for event-to-listener mapping.
-- `make:listener --event=...` is the fastest way to scaffold both the class and the registration.
+- The project already uses dedicated providers for cache, storage, auth, redis, rate limiting, events, routes, queues, and database access.
+- Use `make:listener --event=...` when you want to scaffold both the listener class and registration.
+- Keep event listeners quick. Use queues for slow, retryable side effects.
 
-## Further Reading
+## Related Guides
 
+- [Configuration](configuration.md)
+- [Console and Scaffolding](console-and-scaffolding.md)
+- [Queues](queues.md)
 - `vendor/200mph/myxa-framework/src/Events/README.md`
 - `vendor/200mph/myxa-framework/src/Container/README.md`
-- [Configuration](configuration.md)

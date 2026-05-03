@@ -1,17 +1,65 @@
 # Queues
 
-The project now wires the framework queue contracts into a real app-level queue layer.
+Queues let the app move slow or retryable work out of the HTTP request path.
 
-If you have worked with Laravel queues before, this should feel familiar:
+The project wires the framework queue contracts into an app-level queue layer with:
 
-- jobs are plain PHP classes with a `handle()` method
-- queue selection and retry metadata can live on the job
-- workers are managed through CLI commands
-- Redis is the recommended shared backend for scaled deployments
+- plain PHP job classes
+- file and Redis queue backends
+- worker commands
+- failed-job inspection and retry commands
 
-The main differences are smaller surface area in the core framework and a simpler validator/model stack overall.
+## Quick Example
 
-## Config
+Create a job:
+
+```php
+use Myxa\Queue\JobInterface;
+
+final readonly class SendWelcomeEmailJob implements JobInterface
+{
+    public function __construct(private int $userId)
+    {
+    }
+
+    public function handle(): void
+    {
+        // Load the user and send the email.
+    }
+}
+```
+
+Dispatch it from app code:
+
+```php
+use Myxa\Queue\QueueInterface;
+
+final readonly class SignupService
+{
+    public function __construct(private QueueInterface $queue)
+    {
+    }
+
+    public function welcome(int $userId): void
+    {
+        $this->queue->push(new SendWelcomeEmailJob($userId));
+    }
+}
+```
+
+Run a worker:
+
+```bash
+./myxa queue:work
+```
+
+For local debugging, process one available job and exit:
+
+```bash
+./myxa queue:work --once
+```
+
+## Configuration
 
 Queue config lives in:
 
@@ -33,44 +81,41 @@ QUEUE_WORKER_MAX_ATTEMPTS=3
 QUEUE_WORKER_BACKOFF=30
 ```
 
-## Supported Queue Stores
+## Backends
 
-- `file` -> local filesystem queue under `storage/queue`
-- `redis` -> shared Redis queue for multi-node deployments
+Supported queue stores:
+
+- `file`: local filesystem queue under `storage/queue`
+- `redis`: shared Redis queue for multi-node deployments
 
 Recommended usage:
 
-- local development or small single-node apps -> `file`
-- scaled or multi-node apps -> `redis`
+- use `file` for local development and small single-node apps
+- use `redis` when multiple app or worker nodes need to consume the same queue
 
-`file` is intentionally the simple default.
-It is easy to inspect and works well when one machine owns the workload.
+Both shipped drivers support reservation recovery. If a worker crashes after reserving a job but before acknowledging it, the job is returned to the ready queue after `QUEUE_VISIBILITY_TIMEOUT` expires.
 
-`redis` is the better choice when multiple app or worker nodes need to consume the same queue safely.
+## Jobs
 
-Both shipped drivers also support reservation recovery. If a worker crashes after reserving a job but before acknowledging it, the job is returned to the ready queue after the visibility timeout expires.
-
-## Job Shape
-
-Basic queued job:
+Jobs should implement `JobInterface` and expose a `handle()` method:
 
 ```php
 use Myxa\Queue\JobInterface;
 
-final class SendWelcomeEmailJob implements JobInterface
+final class GenerateReportJob implements JobInterface
 {
-    public function __construct(private int $userId)
+    public function __construct(private int $reportId)
     {
     }
 
     public function handle(): void
     {
-        // Send the email.
+        // Generate the report.
     }
 }
 ```
 
-Job with queue metadata using the `Quable` trait:
+The project also includes `App\Queue\Quable` for job-level queue metadata. The name is intentional in this codebase.
 
 ```php
 use App\Queue\Quable;
@@ -79,6 +124,10 @@ use Myxa\Queue\JobInterface;
 final class GenerateInvoiceJob implements JobInterface
 {
     use Quable;
+
+    public function __construct(private int $invoiceId)
+    {
+    }
 
     public function handle(): void
     {
@@ -102,59 +151,81 @@ final class GenerateInvoiceJob implements JobInterface
 }
 ```
 
-This is the recommended project style:
+Recommended project style:
 
 - always implement `JobInterface`
-- add `Quable` when the job wants to declare queue name, delay, or retry defaults
+- add `Quable` when the job declares queue name, delay, or retry defaults
+- keep queued payloads small and serializable
+
+Good payloads are IDs, strings, numbers, booleans, arrays, and other simple serializable values. Avoid putting live services, database connections, open files, uploaded files, or request objects on queued jobs.
 
 Legacy `QueuedJobInterface` jobs still work, but `JobInterface` plus `Quable` is the simpler app-facing pattern.
 
 ## Dispatching Jobs
 
-Inject the queue contract anywhere in the app:
+Inject `QueueInterface` anywhere in the app:
 
 ```php
 use Myxa\Queue\QueueInterface;
 
-final readonly class SignupService
+final readonly class InvoiceService
 {
     public function __construct(private QueueInterface $queue)
     {
     }
 
-    public function welcome(int $userId): void
+    public function generate(int $invoiceId): void
     {
-        $this->queue->push(new SendWelcomeEmailJob($userId), [
-            'source' => 'signup',
+        $this->queue->push(new GenerateInvoiceJob($invoiceId), [
+            'source' => 'invoice-service',
         ]);
     }
 }
 ```
 
-Jobs are serialized before being persisted, so queued jobs should only carry data that can be safely serialized.
+You can also force a queue name at dispatch time:
 
-## Queue Commands
+```php
+$queue->push(new GenerateInvoiceJob($invoiceId), queue: 'documents');
+```
 
-Process jobs:
+Jobs are serialized before being persisted, so queued jobs should carry the data needed to reload state later rather than carrying live runtime objects.
+
+## Working Jobs
+
+Process jobs from the default queue:
 
 ```bash
 ./myxa queue:work
-./myxa queue:work emails --once
-./myxa queue:work emails --max-jobs=100 --sleep=2
 ```
 
-Important `queue:work` options:
+Process jobs from a named queue:
 
-- `--once` -> process at most one available job, then exit
-- `--sleep=<seconds>` -> how long to wait after an empty poll before checking again
-- `--max-jobs=<count>` -> stop after processing that many jobs
-- `--max-idle=<count>` -> stop after that many empty polls; `0` means keep running
+```bash
+./myxa queue:work emails
+```
+
+Useful worker options:
+
+- `--once`: process at most one available job, then exit
+- `--sleep=<seconds>`: wait this long after an empty poll before checking again
+- `--max-jobs=<count>`: stop after processing this many jobs
+- `--max-idle=<count>`: stop after this many empty polls; `0` means keep running
+
+Examples:
+
+```bash
+./myxa queue:work emails --once
+./myxa queue:work emails --sleep=1 --max-idle=5
+./myxa queue:work emails --max-jobs=500
+```
 
 Practical guidance:
 
-- production long-running workers usually leave `--max-idle` at `0`
-- `--once` and short `--max-idle` values are most useful in development, CI, or ephemeral worker setups
-- `--max-jobs` can be useful in production too when you want workers to recycle periodically
+- use `--once` for local debugging and CI-style checks
+- use short `--max-idle` values for short-lived workers
+- leave `--max-idle=0` for production workers that should keep polling
+- use `--max-jobs` when you want long-running workers to recycle periodically
 
 Inspect queues:
 
@@ -163,54 +234,56 @@ Inspect queues:
 ./myxa queue:status emails
 ```
 
-Inspect and clear failures:
+## Failed Jobs
+
+Jobs that exhaust retries are moved to the failed-job store. This acts as the project DLQ.
+
+Inspect failed jobs:
 
 ```bash
 ./myxa queue:failed
 ./myxa queue:failed emails --limit=20
+```
+
+Retry failed jobs:
+
+```bash
 ./myxa queue:retry job-123
 ./myxa queue:retry-all
 ./myxa queue:retry-all emails --limit=20
+```
+
+Delete failed jobs:
+
+```bash
+./myxa queue:forget-failed job-123
 ./myxa queue:prune-failed --older-than=7d
 ./myxa queue:prune-failed emails --older-than=30d
-./myxa queue:forget-failed job-123
 ./myxa queue:flush-failed
 ./myxa queue:flush-failed emails
 ```
 
-The failed-job store acts as the project DLQ.
+Command differences:
 
-- jobs that exhaust retries are moved there
-- operators can inspect them with `queue:failed`
-- operators can send one back to the main queue with `queue:retry`
-- operators can bulk retry them with `queue:retry-all`
-- operators can prune stale failed jobs with `queue:prune-failed`
-- operators can permanently delete one with `queue:forget-failed`
-
-Important DLQ command differences:
-
-- `queue:retry <id>` -> retry one failed job
-- `queue:retry-all` -> bulk retry failed jobs
-- `queue:forget-failed <id>` -> delete one failed job from the DLQ
-- `queue:flush-failed` -> delete every failed job, optionally limited to one queue
-- `queue:prune-failed --older-than=7d` -> delete only old failed jobs
+- `queue:retry <id>` retries one failed job
+- `queue:retry-all [queue]` retries many failed jobs
+- `queue:forget-failed <id>` deletes one failed job
+- `queue:flush-failed [queue]` deletes all failed jobs for that scope
+- `queue:prune-failed [queue] --older-than=7d` deletes only old failed jobs
 
 `queue:prune-failed` supports age suffixes:
 
-- `s` -> seconds
-- `m` -> minutes
-- `h` -> hours
-- `d` -> days
-- `w` -> weeks
+- `s`: seconds
+- `m`: minutes
+- `h`: hours
+- `d`: days
+- `w`: weeks
 
-`QUEUE_VISIBILITY_TIMEOUT` controls how long a reserved job may stay in-flight before it is assumed abandoned and automatically re-queued.
+## Named Queues
 
-## Real Example: `emails` Queue
+Queue names are logical channels chosen by the job or by the caller. You do not need special config just to use a non-default queue name.
 
-You do not need special config just to use a non-default queue name.
-Queue names are logical channels chosen by the job or by the caller.
-
-Example job:
+Declare the queue on the job:
 
 ```php
 use App\Queue\Quable;
@@ -234,11 +307,6 @@ final readonly class SendWelcomeEmailJob implements JobInterface
         return 'emails';
     }
 
-    public function delaySeconds(): int
-    {
-        return 0;
-    }
-
     public function maxAttempts(): int
     {
         return 3;
@@ -252,41 +320,27 @@ Dispatch it:
 $queue->push(new SendWelcomeEmailJob($userId));
 ```
 
-Or force the queue name at dispatch time:
-
-```php
-$queue->push(new SendWelcomeEmailJob($userId), queue: 'emails');
-```
-
-Run only the email worker:
+Run only that queue:
 
 ```bash
 ./myxa queue:work emails
 ```
 
-A few realistic worker commands:
-
-```bash
-./myxa queue:work emails
-./myxa queue:work emails --sleep=1
-./myxa queue:work emails --max-jobs=500
-./myxa queue:work emails --once
-```
-
-Inspect only the email queue:
+Inspect only that queue:
 
 ```bash
 ./myxa queue:status emails
 ./myxa queue:failed emails
-./myxa queue:retry-all emails
-./myxa queue:prune-failed emails --older-than=30d
 ```
 
-## Which Backend Should You Choose?
+## Adding Another Backend
 
-For this project, the practical answer is:
+If you eventually need cloud-native transports like SQS or RabbitMQ, the framework contracts are already in place. Add a project-level adapter for `QueueInterface` without changing the job API.
 
-- `file` first, when the app is small or deployed on one node
-- `redis` when you scale to multiple nodes or separate worker processes
+## Related Guides
 
-If you eventually need cloud-native transports like SQS or RabbitMQ, the framework contracts are already in place and you can add another project-level adapter without changing the job API.
+- [Configuration](configuration.md)
+- [Console and Scaffolding](console-and-scaffolding.md)
+- [Cache](cache.md)
+- [Storage](storage.md)
+- [Events, Listeners, and Services](events-and-services.md)

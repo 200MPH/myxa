@@ -1,6 +1,6 @@
-# HTTP, Routing, Controllers, and Middleware
+# HTTP Routing
 
-The app HTTP entry point lives in `public/index.php`, which boots `bootstrap/http.php` and then runs `App\Http\Kernel`.
+HTTP requests enter through `public/index.php`, boot `bootstrap/http.php`, and are handled by `App\Http\Kernel`.
 
 Routes are loaded from:
 
@@ -8,115 +8,248 @@ Routes are loaded from:
 routes/*.php
 ```
 
-Today the project ships with `routes/web.php`.
+The app skeleton ships with `routes/web.php`.
 
-## Basic Routes
+## Quick Example
 
-Example route file:
+Most endpoints are just a route, a controller method, a request, and a response:
 
 ```php
 <?php
 
 declare(strict_types=1);
 
+use App\Http\Controllers\UserController;
+use Myxa\Support\Facades\Route;
+
+Route::get('/users', [UserController::class, 'index']);
+Route::post('/users', [UserController::class, 'store']);
+Route::get('/users/{id}', [UserController::class, 'show']);
+```
+
+```php
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Controllers;
+
+use Myxa\Http\Request;
+use Myxa\Http\Response;
+
+final class UserController
+{
+    public function index(Request $request): array
+    {
+        return [
+            'page' => $request->query('page', 1),
+            'users' => [],
+        ];
+    }
+
+    public function store(Request $request, Response $response): Response
+    {
+        $name = (string) $request->input('name', '');
+        $email = (string) $request->input('email', '');
+
+        return $response->json([
+            'name' => $name,
+            'email' => $email,
+        ], 201);
+    }
+
+    public function show(string $id): array
+    {
+        return ['id' => $id];
+    }
+}
+```
+
+## Defining Routes
+
+Use the `Route` facade in route files:
+
+```php
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\HealthController;
 use Myxa\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index']);
 Route::get('/health', [HealthController::class, 'show']);
 ```
 
-Supported helpers include:
+Supported helpers:
 
-- `Route::get()`
-- `Route::post()`
-- `Route::put()`
-- `Route::patch()`
-- `Route::delete()`
-- `Route::options()`
-- `Route::head()`
-- `Route::match()`
-- `Route::any()`
+```php
+Route::get('/posts', [PostController::class, 'index']);
+Route::post('/posts', [PostController::class, 'store']);
+Route::put('/posts/{id}', [PostController::class, 'replace']);
+Route::patch('/posts/{id}', [PostController::class, 'update']);
+Route::delete('/posts/{id}', [PostController::class, 'destroy']);
+Route::options('/posts', [PostController::class, 'options']);
+Route::head('/posts', [PostController::class, 'head']);
+
+Route::match(['GET', 'POST'], '/search', [SearchController::class, 'handle']);
+Route::any('/webhook', [WebhookController::class, 'handle']);
+```
+
+Typical use:
+
+- `get()` reads a page or resource
+- `post()` creates something or accepts a form
+- `put()` replaces a resource
+- `patch()` partially updates a resource
+- `delete()` removes a resource
+- `match()` accepts a small set of methods
+- `any()` is useful for flexible endpoints such as webhooks
 
 ## Route Parameters
 
+Named route parameters use `{name}` segments:
+
 ```php
 Route::get('/users/{id}', [UserController::class, 'show']);
+Route::get('/posts/{postId}/comments/{commentId}', [CommentController::class, 'show']);
 ```
 
-The route parameter is injected into the handler:
+Parameters are injected into the handler by name:
 
 ```php
 final class UserController
 {
-    public function show(string $id): string
+    public function show(string $id): array
     {
-        return "User {$id}";
+        return ['id' => $id];
     }
 }
 ```
 
 ## Route Groups
 
-Prefix group:
+Use groups when several routes share a prefix:
 
 ```php
 Route::group('/api', static function (): void {
     Route::get('/users', [UserController::class, 'index']);
     Route::post('/users', [UserController::class, 'store']);
+    Route::get('/users/{id}', [UserController::class, 'show']);
 });
 ```
 
-Middleware-only group:
+Use a middleware group when several routes share protection or request handling:
 
 ```php
-Route::middleware([
-    \App\Http\Middleware\ThrottleMiddleware::using('api'),
-], static function (): void {
-    Route::get('/reports', [ReportController::class, 'index']);
+use App\Http\Middleware\ThrottleMiddleware;
+
+Route::middleware([ThrottleMiddleware::using('api')], static function (): void {
+    Route::get('/api/reports', [ReportController::class, 'index']);
+    Route::post('/api/imports', [ImportController::class, 'store']);
 });
 ```
+
+You can also combine a prefix and middleware:
+
+```php
+use Myxa\Middleware\AuthMiddleware;
+
+Route::group('/admin', static function (): void {
+    Route::get('/dashboard', [AdminDashboardController::class, 'show']);
+    Route::get('/users', [AdminUserController::class, 'index']);
+}, [AuthMiddleware::using('web')]);
+```
+
+For guard setup, see [Auth](auth.md). For throttle presets and stores, see [Rate Limiting and Throttling](rate-limiting.md).
 
 ## Controllers
 
-Generate a controller:
+Generate controllers with:
 
 ```bash
 ./myxa make:controller User
 ./myxa make:controller Admin/User --resource
 ```
 
-Generated controllers live under:
+Generated controllers live in:
 
 ```text
 app/Http/Controllers
 ```
 
-Example:
+Controller methods can receive route parameters, `Request`, `Response`, and other container-resolved dependencies:
 
 ```php
 use Myxa\Http\Request;
 use Myxa\Http\Response;
 
-final class UserController
+final class ReportController
 {
-    public function index(Request $request): Response
+    public function show(string $id, Request $request, Response $response): Response
     {
-        return (new Response())->json(['message' => 'ok']);
+        return $response->json([
+            'id' => $id,
+            'format' => $request->query('format', 'summary'),
+        ]);
     }
 }
 ```
 
-## What a Controller Method Can Return
+## Requests
 
-The kernel normalizes action return values like this:
+Inject `Myxa\Http\Request` when a controller needs request data:
 
-- `Response` -> returned as-is
-- `string` -> HTML/text response
-- `array` or `object` -> JSON response
-- `null` -> `204 No Content`
+```php
+use Myxa\Http\Request;
 
-That means this is valid:
+final class SearchController
+{
+    public function index(Request $request): array
+    {
+        return [
+            'query' => $request->query('q', ''),
+            'page' => $request->query('page', 1),
+            'tenant' => $request->header('X-Tenant', 'public'),
+            'token' => $request->bearerToken(),
+        ];
+    }
+}
+```
+
+Common request helpers:
+
+- `$request->query('key', $default)` reads query string values
+- `$request->post('key', $default)` reads POST body values
+- `$request->input('key', $default)` reads merged query and POST input
+- `$request->all()` returns merged query and POST input
+- `$request->header('Name', $default)` reads headers
+- `$request->cookie('name', $default)` reads cookies
+- `$request->file('name', $default)` reads uploaded files
+- `$request->method()`, `$request->path()`, `$request->fullUrl()`, and `$request->ip()` read request metadata
+
+For small route closures, the request facade is also available:
+
+```php
+use Myxa\Support\Facades\Request;
+use Myxa\Support\Facades\Route;
+
+Route::get('/request-preview', static function (): array {
+    return [
+        'method' => Request::method(),
+        'path' => Request::path(),
+        'input' => Request::all(),
+    ];
+});
+```
+
+## Responses
+
+Controller methods may return:
+
+- `Response` returned as-is
+- `string` as an HTML/text response
+- `array` or `object` as a JSON response
+- `null` as `204 No Content`
+
+Simple JSON responses can return arrays directly:
 
 ```php
 public function health(): array
@@ -125,34 +258,97 @@ public function health(): array
 }
 ```
 
-And this is also valid:
+Use `Myxa\Http\Response` when you need a status code, headers, cookies, redirects, or explicit content type:
 
 ```php
-public function show(): Response
+use Myxa\Http\Response;
+
+final class LoginController
 {
-    return (new Response())->html('<h1>Hello</h1>');
+    public function store(Response $response): Response
+    {
+        return $response
+            ->cookie('notice', 'signed-in', path: '/')
+            ->redirect('/dashboard');
+    }
 }
 ```
 
-Be careful with `void` methods:
+Useful response helpers:
 
-- a controller action that returns `null` will produce a `204`
+```php
+$response->json(['created' => true], 201);
+$response->html('<h1>Hello</h1>');
+$response->text('Accepted', 202);
+$response->redirect('/login');
+$response->noContent();
+$response->setHeader('X-Trace-Id', 'req-123');
+$response->cookie('theme', 'dark');
+```
+
+The response facade is handy in short route handlers:
+
+```php
+use Myxa\Support\Facades\Response;
+use Myxa\Support\Facades\Route;
+
+Route::post('/imports', static function () {
+    return Response::json(['queued' => true], 202)
+        ->setHeader('X-Import-Queued', 'yes');
+});
+```
 
 ## Middleware
 
-Generate middleware:
+Middleware runs around a route handler. Use it for concerns such as authentication, throttling, tenant detection, headers, or request logging.
+
+Generate middleware with:
 
 ```bash
 ./myxa make:middleware Api/EnsureTenant
 ```
 
-Generated middleware lives under:
+Generated middleware lives in:
 
 ```text
 app/Http/Middleware
 ```
 
-Example usage by class:
+Generated middleware implements this method:
+
+```php
+public function handle(Request $request, Closure $next, RouteDefinition $route): mixed
+```
+
+A simple middleware can block a request before it reaches the controller:
+
+```php
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Middleware;
+
+use Closure;
+use Myxa\Http\Request;
+use Myxa\Http\Response;
+use Myxa\Middleware\MiddlewareInterface;
+use Myxa\Routing\RouteDefinition;
+
+final class EnsureTenantMiddleware implements MiddlewareInterface
+{
+    public function handle(Request $request, Closure $next, RouteDefinition $route): mixed
+    {
+        if ($request->header('X-Tenant') === null) {
+            return (new Response())->json(['error' => 'Tenant header is required.'], 400);
+        }
+
+        return $next($request);
+    }
+}
+```
+
+Attach middleware to one route:
 
 ```php
 use App\Http\Middleware\EnsureTenantMiddleware;
@@ -161,301 +357,26 @@ Route::get('/dashboard', [DashboardController::class, 'show'])
     ->middleware(EnsureTenantMiddleware::class);
 ```
 
-Generated middleware implements:
+Attach middleware to a group:
 
 ```php
-public function handle(Request $request, Closure $next, RouteDefinition $route): mixed
+Route::middleware([EnsureTenantMiddleware::class], static function (): void {
+    Route::get('/reports', [ReportController::class, 'index']);
+    Route::post('/imports', [ImportController::class, 'store']);
+});
 ```
 
-## Auth Middleware
-
-The framework ships guard-based auth middleware.
-
-Protect a web route:
+Built-in auth and throttling middleware are used the same way:
 
 ```php
+use App\Http\Middleware\ThrottleMiddleware;
 use Myxa\Middleware\AuthMiddleware;
 
 Route::get('/dashboard', [DashboardController::class, 'show'])
     ->middleware(AuthMiddleware::using('web'));
-```
 
-The `web` guard uses the configured session driver from `config/auth.php`. The current app supports `file`, `redis`, and `database` session persistence behind the same session cookie flow.
-
-Protect an API route:
-
-```php
-Route::get('/api/me', [ProfileController::class, 'show'])
-    ->middleware(AuthMiddleware::using('api'));
-```
-
-Get the current user in a controller:
-
-```php
-use Myxa\Auth\AuthManager;
-use Myxa\Http\Request;
-
-final class ProfileController
-{
-    public function show(Request $request, AuthManager $auth): array
-    {
-        $user = $auth->user($request, 'api');
-
-        return [
-            'user' => $user?->toArray(),
-        ];
-    }
-}
-```
-
-## Rate Limiting
-
-The app includes preset-aware throttle middleware.
-
-Use a preset:
-
-```php
-use App\Http\Middleware\ThrottleMiddleware;
-
-Route::middleware([ThrottleMiddleware::using('api')], static function (): void {
-    Route::get('/api/reports', [ReportController::class, 'index']);
-});
-```
-
-Current presets live in:
-
-```text
-config/rate_limit.php
-```
-
-Examples:
-
-- `api`
-- `login`
-- `uploads`
-
-If you need one-off limits, you can use the framework middleware directly:
-
-```php
-use Myxa\Middleware\RateLimitMiddleware;
-
-Route::post('/imports', [ImportController::class, 'store'])
-    ->middleware(RateLimitMiddleware::using(10, 60, 'imports'));
-```
-
-For a fuller auth walkthrough, see [Auth](auth.md).
-For preset and store details, see [Rate Limiting and Throttling](rate-limiting.md).
-
-## Request Examples
-
-You can inject `Myxa\Http\Request` directly into a controller method:
-
-```php
-use Myxa\Http\Request;
-
-final class ProfileController
-{
-    public function show(Request $request): array
-    {
-        return [
-            'method' => $request->method(),
-            'path' => $request->path(),
-            'full_url' => $request->fullUrl(),
-            'ip' => $request->ip(),
-            'expects_json' => $request->expectsJson(),
-        ];
-    }
-}
-```
-
-Read query string, form input, and headers:
-
-```php
-use Myxa\Http\Request;
-use Myxa\Http\Response;
-
-final class SearchController
-{
-    public function index(Request $request): Response
-    {
-        $query = $request->query('q', '');
-        $page = (int) $request->query('page', 1);
-        $token = $request->bearerToken();
-        $tenant = $request->header('X-Tenant', 'public');
-
-        return (new Response())->json([
-            'query' => $query,
-            'page' => $page,
-            'tenant' => $tenant,
-            'has_token' => $token !== null,
-        ]);
-    }
-}
-```
-
-You can also use the request facade in route closures or small handlers:
-
-```php
-use Myxa\Support\Facades\Request;
-use Myxa\Support\Facades\Route;
-
-Route::get('/request-example', static function (): array {
-    return [
-        'method' => Request::method(),
-        'filters' => Request::query(),
-        'input' => Request::input(),
-        'headers' => Request::headers(),
-    ];
-});
-```
-
-Uploads use the same request object. `Request::file()` returns normalized `UploadedFile` objects, so the simplest happy-path controller can store the upload directly:
-
-```php
-use Myxa\Http\Request;
-
-final class AvatarController
-{
-    public function store(Request $request): array
-    {
-        $avatar = $request->file('avatar');
-        $stored = $avatar->store('avatars/' . $avatar->name());
-
-        return [
-            'location' => $stored->location(),
-        ];
-    }
-}
-```
-
-The facade is just as direct:
-
-```php
-use Myxa\Support\Facades\Request;
-
-$stored = Request::file('avatar')->store('avatars/john.png');
-```
-
-`Request::rawFile()` still exposes the original PHP `$_FILES` payload when you need it.
-
-For multi-file inputs, `Request::file('photos', [])` returns an array of `UploadedFile` objects:
-
-```php
-use Myxa\Http\Request;
-
-final class GalleryController
-{
-    public function store(Request $request): array
-    {
-        $stored = [];
-
-        foreach ($request->file('photos', []) as $index => $photo) {
-            if (!$photo->isValid()) {
-                continue;
-            }
-
-            $stored[] = $photo->store(
-                sprintf('galleries/photo-%d.%s', $index + 1, $photo->extension()),
-                storage: 'public',
-            )->location();
-        }
-
-        return ['files' => $stored];
-    }
-}
-```
-
-## Response Helpers
-
-You can return a response object directly:
-
-```php
-return (new Response())->json(['saved' => true], 201);
-```
-
-Set headers, cookies, redirects, and empty responses with the injected response object:
-
-```php
-use Myxa\Http\Response;
-
-final class SessionController
-{
-    public function store(): Response
-    {
-        return (new Response())
-            ->setHeader('X-Request-Source', 'session')
-            ->cookie('session_notice', 'created', path: '/', secure: true, httpOnly: true)
-            ->json(['created' => true], 201);
-    }
-
-    public function destroy(): Response
-    {
-        return (new Response())->noContent();
-    }
-
-    public function redirectToDocs(): Response
-    {
-        return (new Response())->redirect('/docs');
-    }
-}
-```
-
-The response facade is handy in route closures and small endpoint handlers:
-
-```php
-use Myxa\Support\Facades\Response;
-use Myxa\Support\Facades\Route;
-
-Route::post('/imports', static function () {
-    return Response::status(202)
-        ->setHeader('X-Import-Queued', 'yes')
-        ->json([
-            'queued' => true,
-        ]);
-});
-```
-
-Streaming responses are useful for large exports, server-sent events, and cursor-backed model output:
-
-```php
-use App\Models\User;
-use Myxa\Http\StreamWriterInterface;
-use Myxa\Support\Facades\Response;
-use Myxa\Support\Facades\Route;
-
-Route::get('/users.ndjson', static function () {
-    return Response::streaming(
-        static function (StreamWriterInterface $stream): void {
-            foreach (User::query()->orderBy('id')->cursor() as $user) {
-                $stream->write(json_encode($user->toArray(), JSON_THROW_ON_ERROR) . "\n");
-            }
-        },
-        headers: [
-            'Content-Type' => 'application/x-ndjson',
-            'Cache-Control' => 'no-cache',
-            'X-Accel-Buffering' => 'no',
-        ],
-    );
-});
-```
-
-The stream callback receives a `StreamWriterInterface`. Calling `write()` echoes the chunk and flushes it, so controller code does not need to call `ob_flush()` or `flush()` directly.
-
-For HTML pages, the app uses `Html` rendering through `AppServiceProvider`:
-
-```php
-use Myxa\Http\Response;
-use Myxa\Support\Html\Html;
-
-public function show(Html $html): Response
-{
-    return (new Response())->html($html->renderPage(
-        'pages/home',
-        ['user' => $user],
-        'layouts/app',
-        ['title' => 'Dashboard'],
-    ));
-}
+Route::post('/api/imports', [ImportController::class, 'store'])
+    ->middleware(ThrottleMiddleware::using('uploads'));
 ```
 
 ## Route Cache
@@ -478,12 +399,17 @@ Use cacheable handlers and middleware if you plan to compile routes.
 
 ## Notes
 
-- Avoid duplicate method/path registrations. The current router keeps the first matching route.
 - Keep browser routes and API routes clearly separated when possible.
-- Use explicit controller method names such as `index`, `show`, and `store` unless the class is truly single-action.
+- Avoid duplicate method and path registrations. The router keeps the first matching route.
+- Prefer explicit controller method names such as `index`, `show`, `store`, `update`, and `destroy`.
+- Put detailed auth and throttle behavior in their dedicated docs, and keep this guide focused on request-to-response flow.
 
 ## Further Reading
 
-- `vendor/200mph/myxa-framework/src/Routing/README.md`
-- `vendor/200mph/myxa-framework/src/Middleware/README.md`
+- [Auth](auth.md)
+- [Rate Limiting and Throttling](rate-limiting.md)
+- [Validation](validation.md)
 - [Console and Scaffolding](console-and-scaffolding.md)
+- `vendor/200mph/myxa-framework/src/Routing/README.md`
+- `vendor/200mph/myxa-framework/src/Http/README.md`
+- `vendor/200mph/myxa-framework/src/Middleware/README.md`

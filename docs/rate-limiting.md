@@ -9,9 +9,9 @@ Myxa includes a small request-throttling layer with:
 
 In this app, the main entry point is `App\Http\Middleware\ThrottleMiddleware`.
 
-## Use Presets On Routes
+## Quick Example
 
-The app wrapper middleware resolves named presets from `config/rate_limit.php`:
+Use a named preset on a route or route group:
 
 ```php
 use App\Http\Middleware\ThrottleMiddleware;
@@ -28,7 +28,7 @@ The skeleton currently ships with these presets:
 - `login`
 - `uploads`
 
-## Current Presets
+## Default Presets
 
 The defaults live in:
 
@@ -43,6 +43,32 @@ Out of the box they map to:
 - `uploads`: `20` requests per `60` seconds
 
 Those values can also be overridden from `.env`.
+
+## Adding A Preset
+
+Add another named preset in `config/rate_limit.php`:
+
+```php
+'presets' => [
+    'api' => [
+        'max_attempts' => 60,
+        'decay_seconds' => 60,
+        'prefix' => 'api',
+    ],
+    'admin-reports' => [
+        'max_attempts' => 15,
+        'decay_seconds' => 60,
+        'prefix' => 'admin-reports',
+    ],
+],
+```
+
+Then use it on a route:
+
+```php
+Route::get('/admin/reports', [AdminReportController::class, 'index'])
+    ->middleware(ThrottleMiddleware::using('admin-reports'));
+```
 
 ## One-Off Limits
 
@@ -61,17 +87,16 @@ That means:
 - per `60` seconds
 - stored under the `imports` limiter prefix
 
-## What Happens When A Limit Is Hit
+## When A Limit Is Hit
 
 When a request exceeds the configured limit:
 
 - the middleware throws `TooManyRequestsException`
 - the app exception handler returns a `429` response
-- the response includes rate-limit headers such as:
-  - `Retry-After`
-  - `X-RateLimit-Limit`
-  - `X-RateLimit-Remaining`
-  - `X-RateLimit-Reset`
+- the response includes `Retry-After`
+- the response includes `X-RateLimit-Limit`
+- the response includes `X-RateLimit-Remaining`
+- the response includes `X-RateLimit-Reset`
 
 That makes the throttling story work for both browsers and APIs.
 
@@ -101,32 +126,6 @@ RATE_LIMIT_REDIS_CONNECTION=default
 RATE_LIMIT_REDIS_PREFIX=rate-limit:
 ```
 
-## Adding Your Own Preset
-
-You can add another named preset in `config/rate_limit.php`:
-
-```php
-'presets' => [
-    'api' => [
-        'max_attempts' => 60,
-        'decay_seconds' => 60,
-        'prefix' => 'api',
-    ],
-    'admin-reports' => [
-        'max_attempts' => 15,
-        'decay_seconds' => 60,
-        'prefix' => 'admin-reports',
-    ],
-],
-```
-
-Then use it on a route:
-
-```php
-Route::get('/admin/reports', [AdminReportController::class, 'index'])
-    ->middleware(ThrottleMiddleware::using('admin-reports'));
-```
-
 ## Good Defaults In Practice
 
 Some reasonable starting points:
@@ -138,21 +137,7 @@ Some reasonable starting points:
 
 The right values depend on cost, abuse risk, and user experience.
 
-## Throttling vs Queue Backpressure
-
-Rate limiting protects your HTTP surface.
-Queues protect background processing.
-
-Use throttling when you want to control request volume at the edge.
-Use queues when the work should still happen, just not inline with the request.
-
-Many apps use both:
-
-- throttle `POST /imports`
-- enqueue the actual import job
-
 ## Related Guides
 
-- [HTTP, Routing, Controllers, and Middleware](http-routing.md)
+- [HTTP Routing](http-routing.md)
 - [Configuration](configuration.md)
-- [Queues](queues.md)
