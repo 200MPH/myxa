@@ -244,7 +244,7 @@ Choose disks by use case:
 - `public` for web-exposed files
 - `s3` for shared or cloud-backed files across multiple nodes
 
-For S3-backed apps, the simplest recommendation is one `s3` disk plus an app enum such as `App\Storage\StorageArea` to build object keys like `public/...` and `private/...`.
+Use `App\Storage\StorageArea` when you want consistent `public/...` and `private/...` path prefixes. The helper can be used with any disk; for S3-backed apps, a common pattern is one `s3` disk plus those prefixes.
 
 ### Rate Limiting
 
