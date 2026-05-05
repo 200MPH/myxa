@@ -60,6 +60,25 @@ final class ReportController
 }
 ```
 
+## Public and Private Path Prefixes
+
+Use `App\Storage\StorageArea` when you want consistent `public/...` and `private/...` path prefixes on any disk:
+
+```php
+use App\Storage\StorageArea;
+use Myxa\Support\Facades\Storage;
+
+Storage::put(StorageArea::PublicArea->path('avatars/jane.jpg'), $contents);
+Storage::put(StorageArea::PrivateArea->path('reports/invoice-42.pdf'), $contents);
+```
+
+That resolves to:
+
+- `public/avatars/jane.jpg`
+- `private/reports/invoice-42.pdf`
+
+The helper only builds paths. It does not make a file public or private by itself; visibility still depends on the disk, web server, bucket policy, signed URLs, or application routes that expose the file.
+
 ## Local vs Public
 
 Both `local` and `public` are filesystem-backed, but they serve different purposes:
@@ -197,7 +216,7 @@ AWS_USE_PATH_STYLE_ENDPOINT=false
 
 `AWS_ENDPOINT` and `AWS_USE_PATH_STYLE_ENDPOINT=true` are useful for MinIO or other S3-compatible local/dev services.
 
-For scalable apps, a simple pattern is one `s3` disk plus `App\Storage\StorageArea` to build public/private object key prefixes:
+For scalable apps, a common S3 pattern is one `s3` disk plus the same `App\Storage\StorageArea` helper to build public/private object key prefixes:
 
 ```php
 use App\Storage\StorageArea;
