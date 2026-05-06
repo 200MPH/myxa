@@ -8,6 +8,16 @@ The app is configured through:
 
 `ApplicationFactory` loads all files under `config/` and resolves environment values through `env(...)`.
 
+## On This Page
+
+- [Config Files](#config-files)
+- [Service Providers](#service-providers)
+- [Main Environment Variables](#main-environment-variables)
+- [Versioning](#versioning)
+- [How to Add New Config](#how-to-add-new-config)
+- [When to Use .env vs Config Files](#when-to-use-env-vs-config-files)
+- [Further Reading](#further-reading)
+
 ## Config Files
 
 Current project config files:

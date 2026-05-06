@@ -5,6 +5,20 @@ Use services and providers when you want reusable app behavior registered in the
 
 These belong together because listeners, controllers, commands, and other services can all receive container-injected dependencies.
 
+## On This Page
+
+- [Quick Example](#quick-example)
+- [Events and Listeners](#events-and-listeners)
+- [Event Classes](#event-classes)
+- [Listener Classes](#listener-classes)
+- [Manual Listener Registration](#manual-listener-registration)
+- [How Events Are Processed](#how-events-are-processed)
+- [Services and Providers](#services-and-providers)
+- [Dedicated Providers](#dedicated-providers)
+- [Constructor Injection](#constructor-injection)
+- [Notes](#notes)
+- [Related Guides](#related-guides)
+
 ## Quick Example
 
 Generate an event:

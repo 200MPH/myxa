@@ -4,6 +4,16 @@ The app wires the framework cache manager through `App\Providers\CacheServicePro
 
 Use cache for short-lived computed values, lookup results, or other data that can be safely rebuilt.
 
+## On This Page
+
+- [Configuration](#configuration)
+- [Stores](#stores)
+- [Basic Usage](#basic-usage)
+- [Commands](#commands)
+- [Route Cache](#route-cache)
+- [Notes](#notes)
+- [Related Guides](#related-guides)
+
 ## Configuration
 
 Cache config lives in:

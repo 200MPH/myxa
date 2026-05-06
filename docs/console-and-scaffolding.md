@@ -8,6 +8,27 @@ The preferred project CLI entry point is:
 
 It boots the app console kernel and runs commands inside the container when Docker is available.
 
+## On This Page
+
+- [Basic Usage](#basic-usage)
+- [Maintenance and Versioning](#maintenance-and-versioning)
+- [Cache, Routes, and Storage](#cache-routes-and-storage)
+- [Queues](#queues)
+- [Scaffolding](#scaffolding)
+- [Database and Schema](#database-and-schema)
+- [Auth, Users, and Tokens](#auth-users-and-tokens)
+- [Frontend](#frontend)
+- [Creating New Commands](#creating-new-commands)
+- [Creating Controllers](#creating-controllers)
+- [Creating Middleware](#creating-middleware)
+- [Creating Events and Listeners](#creating-events-and-listeners)
+- [Creating DTO-Style Resources](#creating-dto-style-resources)
+- [Migrations and Models](#migrations-and-models)
+- [Auth Bootstrap](#auth-bootstrap)
+- [Maintenance Mode Notes](#maintenance-mode-notes)
+- [Tips](#tips)
+- [Further Reading](#further-reading)
+
 ## Basic Usage
 
 Show the command list:

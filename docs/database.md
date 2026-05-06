@@ -18,6 +18,15 @@ Supported SQL engines in the framework today:
 
 The app skeleton starts with MySQL, but the underlying SQL layer is not MySQL-only.
 
+## On This Page
+
+- [Configuration](#configuration)
+- [Raw Queries](#raw-queries)
+- [Streaming Raw Results](#streaming-raw-results)
+- [Transactions](#transactions)
+- [When To Use What](#when-to-use-what)
+- [Further Reading](#further-reading)
+
 ## Configuration
 
 Primary config lives in:

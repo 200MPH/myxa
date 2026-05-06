@@ -2,6 +2,18 @@
 
 Migrations keep SQL schema changes versioned with the app.
 
+## On This Page
+
+- [Common Commands](#common-commands)
+- [Generating Migrations](#generating-migrations)
+- [Running Migrations](#running-migrations)
+- [Rolling Back](#rolling-back)
+- [Reverse Engineering](#reverse-engineering)
+- [Schema Snapshots and Diffs](#schema-snapshots-and-diffs)
+- [Migration Files](#migration-files)
+- [Model Scaffolding From Existing Sources](#model-scaffolding-from-existing-sources)
+- [Further Reading](#further-reading)
+
 ## Common Commands
 
 Generate a migration:

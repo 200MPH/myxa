@@ -10,6 +10,20 @@ $validator->field('email')->required()->string()->email()->max(255);
 
 That keeps rules explicit while avoiding string rule lists such as `'required|email|max:255'`.
 
+## On This Page
+
+- [Quick Example](#quick-example)
+- [Checking Manually](#checking-manually)
+- [Common Fluent Rules](#common-fluent-rules)
+- [Nested Fields and Array Items](#nested-fields-and-array-items)
+- [Exists Validation](#exists-validation)
+- [Custom Messages](#custom-messages)
+- [Validated Output](#validated-output)
+- [Error Format](#error-format)
+- [When To Use fails() vs validate()](#when-to-use-fails-vs-validate)
+- [Laravel Comparison](#laravel-comparison)
+- [Related Guides](#related-guides)
+
 ## Quick Example
 
 For typical request validation, create a validator from `$request->all()`, define the expected fields, call `validate()`, then use the validated data:

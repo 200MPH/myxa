@@ -9,6 +9,19 @@ The project wires the framework queue contracts into an app-level queue layer wi
 - worker commands
 - failed-job inspection and retry commands
 
+## On This Page
+
+- [Quick Example](#quick-example)
+- [Configuration](#configuration)
+- [Backends](#backends)
+- [Jobs](#jobs)
+- [Dispatching Jobs](#dispatching-jobs)
+- [Working Jobs](#working-jobs)
+- [Failed Jobs](#failed-jobs)
+- [Named Queues](#named-queues)
+- [Adding Another Backend](#adding-another-backend)
+- [Related Guides](#related-guides)
+
 ## Quick Example
 
 Create a job:

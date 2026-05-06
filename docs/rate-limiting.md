@@ -9,6 +9,17 @@ Myxa includes a small request-throttling layer with:
 
 In this app, the main entry point is `App\Http\Middleware\ThrottleMiddleware`.
 
+## On This Page
+
+- [Quick Example](#quick-example)
+- [Default Presets](#default-presets)
+- [Adding A Preset](#adding-a-preset)
+- [One-Off Limits](#one-off-limits)
+- [When A Limit Is Hit](#when-a-limit-is-hit)
+- [Store Backends](#store-backends)
+- [Good Defaults In Practice](#good-defaults-in-practice)
+- [Related Guides](#related-guides)
+
 ## Quick Example
 
 Use a named preset on a route or route group:

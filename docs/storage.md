@@ -4,6 +4,19 @@ The app wires the framework storage manager through `App\Providers\StorageServic
 
 Use storage for files: uploads, generated reports, browser-downloadable assets, and S3-compatible object storage.
 
+## On This Page
+
+- [Configuration](#configuration)
+- [Basic Usage](#basic-usage)
+- [Public and Private Path Prefixes](#public-and-private-path-prefixes)
+- [Local vs Public](#local-vs-public)
+- [Public File URLs](#public-file-urls)
+- [Uploads](#uploads)
+- [S3-Compatible Storage](#s3-compatible-storage)
+- [Database Storage](#database-storage)
+- [Notes](#notes)
+- [Related Guides](#related-guides)
+
 ## Configuration
 
 Storage config lives in:

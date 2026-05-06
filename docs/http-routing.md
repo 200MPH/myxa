@@ -10,6 +10,20 @@ routes/*.php
 
 The app skeleton ships with `routes/web.php`.
 
+## On This Page
+
+- [Quick Example](#quick-example)
+- [Defining Routes](#defining-routes)
+- [Route Parameters](#route-parameters)
+- [Route Groups](#route-groups)
+- [Controllers](#controllers)
+- [Requests](#requests)
+- [Responses](#responses)
+- [Middleware](#middleware)
+- [Route Cache](#route-cache)
+- [Notes](#notes)
+- [Further Reading](#further-reading)
+
 ## Quick Example
 
 Most endpoints are just a route, a controller method, a request, and a response:

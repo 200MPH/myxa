@@ -14,6 +14,20 @@ Generate one:
 ./myxa make:model App\\Models\\Post
 ```
 
+## On This Page
+
+- [Basic Model](#basic-model)
+- [Factories](#factories)
+- [Querying Models](#querying-models)
+- [Large Result Sets, Cursors, and Batching](#large-result-sets-cursors-and-batching)
+- [Joins](#joins)
+- [Relationships](#relationships)
+- [Declared Properties](#declared-properties)
+- [Guarded, Hidden, and Internal Attributes](#guarded-hidden-and-internal-attributes)
+- [Casting](#casting)
+- [Extra Hydrated Columns](#extra-hydrated-columns)
+- [Further Reading](#further-reading)
+
 ## Basic Model
 
 ```php
