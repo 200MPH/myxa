@@ -6,8 +6,10 @@ namespace Test\Unit\Database;
 
 use App\Config\ConfigRepository;
 use App\Console\Commands\DbSeedCommand;
+use App\Console\Commands\MakeReverseSeedCommand;
 use App\Console\Commands\MakeSeederCommand;
 use App\Database\Seeders\LoadedSeeder;
+use App\Database\Seeders\ReverseSeedScaffolder;
 use App\Database\Seeders\SeedContext;
 use App\Database\Seeders\Seeder;
 use App\Database\Seeders\SeederConfig;
@@ -35,8 +37,10 @@ use RuntimeException;
 use Test\TestCase;
 
 #[CoversClass(DbSeedCommand::class)]
+#[CoversClass(MakeReverseSeedCommand::class)]
 #[CoversClass(MakeSeederCommand::class)]
 #[CoversClass(LoadedSeeder::class)]
+#[CoversClass(ReverseSeedScaffolder::class)]
 #[CoversClass(SeedContext::class)]
 #[CoversClass(Seeder::class)]
 #[CoversClass(SeederConfig::class)]
@@ -207,6 +211,159 @@ PHP);
         self::assertStringContainsString(
             'final class UserSeeder extends Seeder',
             (string) file_get_contents($this->rootPath . '/seeders/Demo/UserSeeder.php'),
+        );
+    }
+
+    public function testReverseSeedScaffolderCreatesRootSeederWithDirectRelationsAndSafeOverrides(): void
+    {
+        $this->createReverseSeedFixture();
+
+        $path = (new ReverseSeedScaffolder($this->database, $this->config))->make(
+            table: 'users',
+            limit: 1,
+            connection: $this->sqlConnection,
+            className: 'Demo/ReverseUsers',
+            ignoreRelations: ['logs'],
+            maskColumns: ['email', 'name'],
+            password: 'local-secret',
+        );
+
+        $source = (string) file_get_contents($path);
+
+        self::assertSame($this->rootPath . '/seeders/Demo/ReverseUsersSeeder.php', $path);
+        self::assertStringContainsString('final class ReverseUsersSeeder extends Seeder', $source);
+        self::assertStringContainsString('use App\\Auth\\PasswordHasher;', $source);
+        self::assertStringContainsString('$context->database(' . var_export($this->sqlConnection, true) . ')', $source);
+        self::assertStringContainsString('$context->truncateTables(', $source);
+        self::assertStringContainsString('private function usersRows(string $passwordHash): array', $source);
+        self::assertStringContainsString('private function postsRows(): array', $source);
+        self::assertStringNotContainsString('private function logsRows(): array', $source);
+        self::assertStringContainsString("'posts',", $source);
+        self::assertStringContainsString("'users',", $source);
+        self::assertStringNotContainsString('ada@example.test', $source);
+        self::assertStringNotContainsString('Ada', $source);
+        self::assertStringContainsString('masked-users-1@example.test', $source);
+        self::assertStringContainsString('masked-users-name-1', $source);
+        self::assertStringContainsString('$passwordHash', $source);
+        self::assertStringContainsString('Post 1', $source);
+        self::assertStringNotContainsString('Post 2', $source);
+
+        $withLogsPath = (new ReverseSeedScaffolder($this->database, $this->config))->make(
+            table: 'users',
+            limit: 1,
+            className: 'Demo/ReverseUsersWithLogs',
+        );
+
+        $withLogsSource = (string) file_get_contents($withLogsPath);
+
+        self::assertStringContainsString('private function postsRows(): array', $withLogsSource);
+        self::assertStringContainsString('private function logsRows(): array', $withLogsSource);
+    }
+
+    public function testReverseSeedScaffolderCanReplayGeneratedSeeder(): void
+    {
+        $this->createReverseSeedFixture();
+
+        $path = (new ReverseSeedScaffolder($this->database, $this->config))->make(
+            tables: ['users', 'posts'],
+            limit: 1,
+            className: 'ReverseSmall',
+            excludeColumns: ['remember_token'],
+            overrides: ['name' => 'Seeded User'],
+            password: 'reseeded-password',
+        );
+
+        $source = (string) file_get_contents($path);
+
+        self::assertStringContainsString('use ShouldTruncate;', $source);
+        self::assertStringNotContainsString('token-one', $source);
+        self::assertStringContainsString("'name' => 'Seeded User'", $source);
+        self::assertStringContainsString("'posts',", $source);
+        self::assertStringContainsString("'users',", $source);
+        self::assertStringNotContainsString('private function logsRows', $source);
+
+        require_once $path;
+
+        /** @var Seeder $seeder */
+        $seeder = new ($this->namespace . '\\ReverseSmallSeeder')();
+        $context = new SeedContext($this->app, $this->sqlConnection, truncate: true);
+
+        $this->database->statement('delete from logs', [], $this->sqlConnection);
+        self::assertIsCallable([$seeder, 'truncate']);
+        call_user_func([$seeder, 'truncate'], $context);
+        $seeder->run($context);
+
+        $users = $this->database->select('select id, email, password, name from users order by id');
+        $posts = $this->database->select('select id, user_id, title from posts order by id');
+
+        self::assertCount(1, $users);
+        self::assertSame('Seeded User', $users[0]['name']);
+        self::assertNotSame('real-hash-one', $users[0]['password']);
+        self::assertTrue(password_verify('reseeded-password', (string) $users[0]['password']));
+        self::assertSame([['id' => 10, 'user_id' => 1, 'title' => 'Post 1']], $posts);
+    }
+
+    public function testMakeReverseSeedCommandParsesOptionsAndScaffoldsSeeder(): void
+    {
+        $this->createReverseSeedFixture();
+
+        $command = new MakeReverseSeedCommand(new ReverseSeedScaffolder($this->database, $this->config));
+
+        self::assertSame('make:reverse-seed', $command->name());
+        self::assertSame('limit', $command->options()[0]->name());
+
+        [$exitCode, $output] = $this->runCommand(
+            $command,
+            'make:reverse-seed',
+            [],
+            [
+                'limit' => 1,
+                'tables' => 'users, posts',
+                'class' => 'CommandDump',
+                'exclude-columns' => 'password, remember_token',
+                'override' => 'name=Command User',
+            ],
+        );
+
+        $source = (string) file_get_contents($this->rootPath . '/seeders/CommandDumpSeeder.php');
+
+        self::assertSame(0, $exitCode);
+        self::assertStringContainsString('Reverse seeder created at', $output);
+        self::assertStringContainsString('final class CommandDumpSeeder extends Seeder', $source);
+        self::assertStringContainsString("'name' => 'Command User'", $source);
+        self::assertStringNotContainsString("'password' =>", $source);
+        self::assertStringNotContainsString("'remember_token' =>", $source);
+        self::assertStringNotContainsString('private function logsRows', $source);
+    }
+
+    public function testReverseSeedScaffolderRejectsUnsafeInputs(): void
+    {
+        $this->createReverseSeedFixture();
+
+        $scaffolder = new ReverseSeedScaffolder($this->database, $this->config);
+
+        $this->assertRuntimeExceptionContains(
+            'Use either --table or --tables',
+            fn (): mixed => $scaffolder->make(table: 'users', tables: ['posts']),
+        );
+        $this->assertRuntimeExceptionContains(
+            'at least 1',
+            fn (): mixed => $scaffolder->make(limit: 0),
+        );
+        $this->assertRuntimeExceptionContains(
+            'was not found',
+            fn (): mixed => $scaffolder->make(tables: ['missing_table']),
+        );
+        $this->assertRuntimeExceptionContains(
+            'is not valid',
+            fn (): mixed => $scaffolder->make(tables: ['bad-table']),
+        );
+
+        $scaffolder->make(className: 'DuplicateReverse');
+
+        $this->assertRuntimeExceptionContains(
+            'already exists',
+            fn (): mixed => $scaffolder->make(className: 'DuplicateReverse'),
         );
     }
 
@@ -435,6 +592,69 @@ PHP,
         ]));
     }
 
+    private function createReverseSeedFixture(): void
+    {
+        $this->database->statement(
+            'create table users (
+                id integer primary key,
+                email text not null,
+                password text not null,
+                remember_token text,
+                name text not null
+            )',
+            [],
+            $this->sqlConnection,
+        );
+        $this->database->statement(
+            'create table posts (
+                id integer primary key,
+                user_id integer not null,
+                title text not null,
+                foreign key (user_id) references users(id)
+            )',
+            [],
+            $this->sqlConnection,
+        );
+        $this->database->statement(
+            'create table logs (
+                id integer primary key,
+                user_id integer not null,
+                message text not null,
+                foreign key (user_id) references users(id)
+            )',
+            [],
+            $this->sqlConnection,
+        );
+
+        $this->database->insert(
+            "insert into users (id, email, password, remember_token, name)
+                values (1, 'ada@example.test', 'real-hash-one', 'token-one', 'Ada')",
+            [],
+            $this->sqlConnection,
+        );
+        $this->database->insert(
+            "insert into users (id, email, password, remember_token, name)
+                values (2, 'grace@example.test', 'real-hash-two', 'token-two', 'Grace')",
+            [],
+            $this->sqlConnection,
+        );
+        $this->database->insert(
+            "insert into posts (id, user_id, title) values (10, 1, 'Post 1')",
+            [],
+            $this->sqlConnection,
+        );
+        $this->database->insert(
+            "insert into posts (id, user_id, title) values (20, 2, 'Post 2')",
+            [],
+            $this->sqlConnection,
+        );
+        $this->database->insert(
+            "insert into logs (id, user_id, message) values (100, 1, 'Log 1')",
+            [],
+            $this->sqlConnection,
+        );
+    }
+
     private function assertRuntimeExceptionContains(string $expected, callable $callback): void
     {
         try {
@@ -472,6 +692,7 @@ PHP,
         $pdo = new PDO('sqlite::memory:');
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+        $pdo->exec('PRAGMA foreign_keys = ON');
 
         $connection = new PdoConnection(new PdoConnectionConfig(
             engine: 'mysql',

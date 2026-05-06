@@ -108,6 +108,7 @@ Useful queue command notes:
 - `make:migration`: generate a new migration file.
 - `make:model`: generate a new model from scratch or from an existing source.
 - `make:resource`: generate a DTO-style data/resource class.
+- `make:reverse-seed`: generate a relational seeder from existing SQL table data.
 - `make:seeder`: generate a new application seeder.
 
 ## Database and Schema
@@ -119,6 +120,16 @@ Useful queue command notes:
 - `migrate:diff`: compare the live schema against a stored snapshot.
 - `migrate:reverse`: generate a migration from an existing live table.
 - `db:seed`: run the default seeder or a selected seeder.
+
+Reverse seed examples:
+
+```bash
+./myxa make:reverse-seed
+./myxa make:reverse-seed --limit=100
+./myxa make:reverse-seed --tables=users,posts
+./myxa make:reverse-seed --table=users --ignore-relations=logs
+./myxa make:reverse-seed --connection=mysql --password="local password"
+```
 
 ## Auth, Users, and Tokens
 

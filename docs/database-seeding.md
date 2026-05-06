@@ -26,6 +26,17 @@ Generate a seeder:
 ./myxa make:seeder Demo/UserSeeder
 ```
 
+Generate a seeder from existing relational database data:
+
+```bash
+./myxa make:reverse-seed
+./myxa make:reverse-seed --limit=100
+./myxa make:reverse-seed --tables=users,posts
+./myxa make:reverse-seed --table=users
+./myxa make:reverse-seed --table=users --ignore-relations=logs
+./myxa make:reverse-seed --connection=mysql
+```
+
 Override default store connections for one run:
 
 ```bash
@@ -77,6 +88,109 @@ final class DatabaseSeeder extends Seeder
     }
 }
 ```
+
+## Faker Data
+
+Factories are convenient for model-shaped records, but seeders can also use `FakeData` directly.
+This is useful for lookup rows, pivot rows, non-model tables, or mixed SQL/Redis/Mongo seed data.
+
+```php
+namespace Database\Seeders;
+
+use App\Database\Seeders\SeedContext;
+use App\Database\Seeders\Seeder;
+use Myxa\Database\Factory\FakeData;
+
+final class DemoContentSeeder extends Seeder
+{
+    public function run(SeedContext $context): void
+    {
+        $fake = new FakeData();
+        $database = $context->database();
+
+        for ($index = 0; $index < 10; $index++) {
+            $query = $database->query()
+                ->insertInto('posts')
+                ->values([
+                    'title' => $fake->sentence(3, 6),
+                    'slug' => $fake->unique('post-slugs')->slug(),
+                    'status' => $fake->choice(['draft', 'published']),
+                    'views' => $fake->number(0, 5000),
+                    'rating' => $fake->decimal(1, 5, 1),
+                    'is_featured' => $fake->boolean(20),
+                    'summary' => $fake->paragraph(2),
+                ]);
+
+            $database->insert($query->toSql(), $query->getBindings());
+        }
+    }
+}
+```
+
+Common helpers:
+
+- `string(16)`: random alphanumeric string
+- `alpha(12)`: random letters
+- `digits(6)`: random numeric string
+- `number(1, 100)`: random integer
+- `decimal(10, 99, 2)`: random float
+- `boolean(25)`: true roughly 25 percent of the time
+- `choice(['draft', 'published'])`: pick one value
+- `word()`, `words(3)`, `sentence()`, `paragraph()`: text helpers
+- `email('example.test')`: generated email address
+- `slug(3)`: generated slug
+- `unique()->email()`: unique generated value
+- `unique('scope-name')->slug()`: unique generated value within a named scope
+
+## Reverse Seeders
+
+`make:reverse-seed` reads live SQL tables and writes a normal PHP seeder under `database/seeders`.
+It is intended for local/demo fixtures where developers have already shaped useful relational data by hand.
+
+By default, it writes up to 20 rows from every relational table:
+
+```bash
+./myxa make:reverse-seed
+```
+
+Use `--tables` for an exact list. It does not discover relations.
+
+Use `--table` for one root table plus directly related tables discovered from foreign keys:
+
+```bash
+./myxa make:reverse-seed --tables=users,posts
+./myxa make:reverse-seed --table=users
+./myxa make:reverse-seed --table=users --ignore-relations=logs
+```
+
+Current relation discovery is intentionally shallow: it follows direct incoming and outgoing foreign keys only.
+It does not crawl multi-hop relation graphs.
+
+Useful shaping options:
+
+```bash
+./myxa make:reverse-seed --limit=100
+./myxa make:reverse-seed --exclude-columns=remember_token
+./myxa make:reverse-seed --mask=email,name
+./myxa make:reverse-seed --override=status=active
+./myxa make:reverse-seed --password="local password"
+```
+
+`--exclude-columns` removes columns from generated rows.
+
+`--mask` keeps the column but replaces non-null values with deterministic safe fixture values.
+
+`--override=column=value` keeps the column and writes the same value to every generated row.
+
+Use `--password` for credential fixtures. The generator detects columns named `password` or `password_hash` and
+the generated seeder hashes the supplied plain password at seed time with `App\Auth\PasswordHasher`.
+
+If `--connection=mysql` is supplied, the generated seeder replays into that named SQL connection. Without it,
+the seeder uses the normal `db:seed` connection defaults and any `db:seed --connection=...` override.
+
+Generated reverse seeders include truncation support. Truncation deletes selected tables in child-before-parent
+order where foreign keys are visible. If you ignore a related table that still contains rows pointing at a parent
+table, your database may reject truncation until those rows are cleared or included.
 
 ## Choosing Stores
 
