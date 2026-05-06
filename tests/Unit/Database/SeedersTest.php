@@ -31,6 +31,7 @@ use Myxa\Redis\RedisManager;
 use PDO;
 use PHPUnit\Framework\Attributes\CoversClass;
 use ReflectionProperty;
+use RuntimeException;
 use Test\TestCase;
 
 #[CoversClass(DbSeedCommand::class)]
@@ -209,6 +210,125 @@ PHP);
         );
     }
 
+    public function testSeedContextExposesConnectionsAndLazyStoreHelpers(): void
+    {
+        $this->database->schema($this->analyticsConnection)->create('context_logs', function (Blueprint $table): void {
+            $table->id();
+            $table->string('message');
+        });
+
+        $this->app->instance('seed.test.value', 'resolved');
+
+        $context = new SeedContext(
+            $this->app,
+            $this->analyticsConnection,
+            $this->redisCacheConnection,
+            $this->mongoConnection,
+            true,
+        );
+
+        self::assertSame($this->app, $context->app());
+        self::assertSame($this->analyticsConnection, $context->databaseConnection());
+        self::assertSame($this->redisCacheConnection, $context->redisConnection());
+        self::assertSame($this->mongoConnection, $context->mongoConnection());
+        self::assertTrue($context->shouldTruncate());
+        self::assertSame('resolved', $context->make('seed.test.value'));
+
+        $context->database()->insert("insert into context_logs (message) values ('kept')");
+        $context->truncateTables(['context_logs']);
+
+        self::assertSame(
+            [],
+            $this->database->select('select message from context_logs', [], $this->analyticsConnection),
+        );
+
+        $context->redis()->set('seed:lazy', 'redis');
+        self::assertSame('redis', $this->redis->get('seed:lazy', $this->redisCacheConnection));
+
+        $context->mongo()->collection('docs')->insertOne(['type' => 'context']);
+        self::assertSame(
+            ['type' => 'context', '_id' => 1],
+            $this->mongo->collection('docs', $this->mongoConnection)->findOne(['type' => 'context']),
+        );
+    }
+
+    public function testSeedContextRejectsInvalidTruncateTables(): void
+    {
+        $context = new SeedContext($this->app, $this->sqlConnection);
+
+        $this->assertRuntimeExceptionContains(
+            'cannot be empty',
+            static function () use ($context): void {
+                $context->truncateTables('');
+            },
+        );
+        $this->assertRuntimeExceptionContains(
+            'is not valid',
+            static function () use ($context): void {
+                $context->truncateTables('users; drop table users');
+            },
+        );
+    }
+
+    public function testSeederLoaderCanLoadByPathAndClassAndRejectsInvalidFiles(): void
+    {
+        $this->writeSeeder('PathSeeder', <<<'PHP'
+    public function run(SeedContext $context): void
+    {
+    }
+PHP);
+
+        $path = $this->rootPath . '/seeders/PathSeeder.php';
+        $loader = new SeederLoader($this->config);
+        $loadedFromPath = $loader->loadPath($path);
+        $loadedFromClass = $loader->load($this->namespace . '\\PathSeeder');
+
+        self::assertSame('PathSeeder', $loadedFromPath->name);
+        self::assertSame($this->namespace . '\\PathSeeder', $loadedFromPath->class);
+        self::assertSame($loadedFromPath->class, $loadedFromClass->class);
+
+        file_put_contents($this->rootPath . '/seeders/InvalidSeeder.php', <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+final class InvalidSeeder
+{
+}
+PHP);
+
+        $this->assertRuntimeExceptionContains(
+            'did not declare a concrete seeder class',
+            fn (): mixed => $loader->loadPath($this->rootPath . '/seeders/InvalidSeeder.php'),
+        );
+    }
+
+    public function testSeederLoaderAndScaffolderRejectInvalidInputs(): void
+    {
+        $loader = new SeederLoader($this->config);
+        $scaffolder = new SeederScaffolder($this->config);
+
+        $this->assertRuntimeExceptionContains('could not be resolved', fn (): mixed => $loader->load(''));
+        $this->assertRuntimeExceptionContains('was not found', fn (): mixed => $loader->load('Missing'));
+        $this->assertRuntimeExceptionContains(
+            'must live under',
+            fn (): mixed => $loader->load('App\\Other\\BadSeeder'),
+        );
+
+        $path = $scaffolder->make('DuplicateSeeder');
+
+        self::assertFileExists($path);
+
+        $this->assertRuntimeExceptionContains(
+            'already exists',
+            fn (): mixed => $scaffolder->make('DuplicateSeeder'),
+        );
+        $this->assertRuntimeExceptionContains(
+            'could not be resolved',
+            fn (): mixed => $scaffolder->make('   '),
+        );
+    }
+
     public function testSeederManagerOnlyResolvesStoreManagersWhenSeederUsesThem(): void
     {
         $this->database->schema($this->sqlConnection)->create('minimal_logs', function (Blueprint $table): void {
@@ -313,6 +433,16 @@ PHP,
             '}',
             '',
         ]));
+    }
+
+    private function assertRuntimeExceptionContains(string $expected, callable $callback): void
+    {
+        try {
+            $callback();
+            self::fail('Expected runtime exception was not thrown.');
+        } catch (RuntimeException $exception) {
+            self::assertStringContainsString($expected, $exception->getMessage());
+        }
     }
 
     /**

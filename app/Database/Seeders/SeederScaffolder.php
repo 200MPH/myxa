@@ -39,7 +39,7 @@ final class SeederScaffolder
      */
     private function normalizeClass(string $name): string
     {
-        $normalized = trim(str_replace('/', '\\', $name), '\\');
+        $normalized = trim(trim(str_replace('/', '\\', $name)), '\\');
         if ($normalized === '') {
             throw new RuntimeException('Seeder name could not be resolved.');
         }
