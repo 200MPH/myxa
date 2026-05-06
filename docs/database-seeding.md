@@ -69,7 +69,8 @@ namespace Database\Seeders;
 use App\Database\Seeders\SeedContext;
 use App\Database\Seeders\Seeder;
 use App\Database\Seeders\ShouldTruncate;
-use App\Models\User;
+use App\Models\Post;
+use Myxa\Database\Factory\FakeData;
 
 final class DatabaseSeeder extends Seeder
 {
@@ -77,55 +78,63 @@ final class DatabaseSeeder extends Seeder
 
     protected function tablesToTruncate(): array
     {
-        return ['users'];
+        return ['posts'];
     }
 
     public function run(SeedContext $context): void
     {
-        User::factory($context->database())
-            ->count(10)
-            ->create();
+        $fake = new FakeData();
+
+        for ($index = 0; $index < 10; $index++) {
+            Post::create([
+                'title' => $fake->sentence(3, 6),
+                'body' => $fake->paragraph(3),
+                'slug' => $fake->unique('post-slugs')->slug(),
+                'status' => $fake->choice(['draft', 'published']),
+                'views' => $fake->number(0, 5000),
+            ]);
+        }
     }
 }
 ```
 
-## Faker Data
+All models extending `Myxa\Database\Model\Model` support `::create([...])` for declared, non-guarded attributes.
+The app boot process wires models to the shared database manager. Calling `$context->database()` first is only
+needed when the seeder should honor `db:seed --connection=...` before static model calls.
 
-Factories are convenient for model-shaped records, but seeders can also use `FakeData` directly.
-This is useful for lookup rows, pivot rows, non-model tables, or mixed SQL/Redis/Mongo seed data.
+## Factory Seeders
+
+Use factories for reusable model-shaped records. See [Database Models and Queries](database-models.md#factories)
+for defining a model factory.
+
+Use `state()` for seeder-specific factory values. A callback state receives `FakeData`, so generated values can
+change for each model:
 
 ```php
 namespace Database\Seeders;
 
 use App\Database\Seeders\SeedContext;
 use App\Database\Seeders\Seeder;
+use App\Models\Post;
 use Myxa\Database\Factory\FakeData;
 
-final class DemoContentSeeder extends Seeder
+final class PublishedPostSeeder extends Seeder
 {
     public function run(SeedContext $context): void
     {
-        $fake = new FakeData();
-        $database = $context->database();
-
-        for ($index = 0; $index < 10; $index++) {
-            $query = $database->query()
-                ->insertInto('posts')
-                ->values([
-                    'title' => $fake->sentence(3, 6),
-                    'slug' => $fake->unique('post-slugs')->slug(),
-                    'status' => $fake->choice(['draft', 'published']),
-                    'views' => $fake->number(0, 5000),
-                    'rating' => $fake->decimal(1, 5, 1),
-                    'is_featured' => $fake->boolean(20),
-                    'summary' => $fake->paragraph(2),
-                ]);
-
-            $database->insert($query->toSql(), $query->getBindings());
-        }
+        Post::factory($context->database())
+            ->count(10)
+            ->state(static fn (array $attributes, FakeData $faker): array => [
+                'status' => $faker->choice(['draft', 'published']),
+                'foo' => $faker->string(),
+                'bar' => 123,
+            ])
+            ->create();
     }
 }
 ```
+
+## FakeData Helpers
 
 Common helpers:
 

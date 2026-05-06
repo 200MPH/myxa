@@ -51,6 +51,127 @@ $post->save();
 $post->delete();
 ```
 
+## Factories
+
+Factories create fake model data for tests, demos, local tooling, and seeders.
+The framework provides the base `Factory`, `FakeData`, and `HasFactory`; the app owns concrete factories.
+
+Define a factory under an autoloaded app namespace such as `App\Database\Factories`:
+
+```php
+namespace App\Database\Factories;
+
+use App\Models\Post;
+use Myxa\Database\Factory\Factory;
+use Myxa\Database\Model\Model;
+
+final class PostFactory extends Factory
+{
+    protected function model(): string
+    {
+        return Post::class;
+    }
+
+    protected function definition(): array
+    {
+        return [
+            'title' => $this->faker()->sentence(3, 6),
+            'body' => $this->faker()->paragraph(3),
+            'slug' => $this->faker()->unique('post-slugs')->slug(),
+            'status' => $this->faker()->choice(['draft', 'published']),
+            'views' => $this->faker()->number(0, 5000),
+        ];
+    }
+
+    protected function afterCreating(Model $model): void
+    {
+        // Optional hook for related records or side effects.
+    }
+}
+```
+
+Attach it to the model with `HasFactory`:
+
+```php
+use App\Database\Factories\PostFactory;
+use Myxa\Database\Factory\Factory;
+use Myxa\Database\Model\HasFactory;
+use Myxa\Database\Model\Model;
+
+final class Post extends Model
+{
+    use HasFactory;
+
+    protected string $table = 'posts';
+
+    protected ?int $id = null;
+    protected string $title = '';
+    protected string $body = '';
+    protected string $slug = '';
+    protected string $status = 'draft';
+    protected int $views = 0;
+
+    protected static function newFactory(): Factory
+    {
+        return PostFactory::new();
+    }
+}
+```
+
+Then use either the factory class directly or the model facade-style helper:
+
+```php
+$post = PostFactory::new()->make();
+$post = Post::factory()->make();
+```
+
+Build modes:
+
+```php
+$attributes = Post::factory()->raw();
+$post = Post::factory()->make();
+$persisted = Post::factory()->create();
+
+$posts = Post::factory()
+    ->count(10)
+    ->create();
+```
+
+What each method does:
+
+- `raw()` returns the final attribute array without creating a model
+- `make()` returns an unsaved model instance
+- `create()` returns a saved model instance
+- `count(10)` repeats the operation and returns a list
+
+Use `state()` for reusable variants, and pass attributes to `raw()`, `make()`, or `create()` for one-off overrides:
+
+```php
+$published = Post::factory()
+    ->state(['status' => 'published'])
+    ->create([
+        'title' => 'Release notes',
+    ]);
+```
+
+Factory values are resolved in this order:
+
+1. `definition()`
+2. each `state(...)` call
+3. final overrides passed to `raw()`, `make()`, or `create()`
+
+Factories use `FakeData` through `$this->faker()`:
+
+```php
+[
+    'code' => $this->faker()->string(16),
+    'email' => $this->faker()->unique()->email(),
+    'slug' => $this->faker()->unique('post-slugs')->slug(),
+    'score' => $this->faker()->decimal(1, 5, 1),
+    'is_public' => $this->faker()->boolean(80),
+]
+```
+
 ## Querying Models
 
 Basic filtering:
