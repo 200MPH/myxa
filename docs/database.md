@@ -6,6 +6,7 @@ Use this guide for connection setup, raw SQL, and transactions. For model queryi
 
 - [Database Models and Queries](database-models.md)
 - [Database Migrations](database-migrations.md)
+- [Database Seeding](database-seeding.md)
 - [Mongo Models](mongo-models.md)
 
 Supported SQL engines in the framework today:
@@ -145,11 +146,13 @@ try {
 - Use `DB::cursor()` for large raw SQL reads.
 - Use [Database Models and Queries](database-models.md) for normal app data access.
 - Use [Database Migrations](database-migrations.md) to evolve schema.
+- Use [Database Seeding](database-seeding.md) to load local, demo, fixture, or bootstrap data.
 
 ## Further Reading
 
 - [Database Models and Queries](database-models.md)
 - [Database Migrations](database-migrations.md)
+- [Database Seeding](database-seeding.md)
 - [Mongo Models](mongo-models.md)
 - [Configuration](configuration.md)
 - `vendor/200mph/myxa-framework/src/Database/README.md`

@@ -108,6 +108,7 @@ Useful queue command notes:
 - `make:migration`: generate a new migration file.
 - `make:model`: generate a new model from scratch or from an existing source.
 - `make:resource`: generate a DTO-style data/resource class.
+- `make:seeder`: generate a new application seeder.
 
 ## Database and Schema
 
@@ -117,6 +118,7 @@ Useful queue command notes:
 - `migrate:snapshot`: write a schema snapshot JSON file.
 - `migrate:diff`: compare the live schema against a stored snapshot.
 - `migrate:reverse`: generate a migration from an existing live table.
+- `db:seed`: run the default seeder or a selected seeder.
 
 ## Auth, Users, and Tokens
 

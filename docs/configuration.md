@@ -20,6 +20,7 @@ Current project config files:
 - `config/migrations.php`: migration paths, schema snapshots, repository table names, and model-generation paths.
 - `config/queue.php`: queue driver, named stores, worker behavior, retry defaults, visibility timeout, and Redis queue options.
 - `config/rate_limit.php`: rate-limit stores and reusable presets such as `api`, `login`, and `uploads`.
+- `config/seeders.php`: seeder path, root seeder class, namespace, and default store connections.
 - `config/services.php`: infrastructure-style service connections, mainly Redis by default.
 - `config/storage.php`: default storage disk and named local, public, database-backed, or S3-backed disks.
 - `config/version.php`: version metadata source, sync behavior, and generated version file location.

@@ -73,6 +73,7 @@ Use generated models as a starting point, then review property types, casts, gua
 
 - [Database](database.md)
 - [Database Models and Queries](database-models.md)
+- [Database Seeding](database-seeding.md)
 - [Console and Scaffolding](console-and-scaffolding.md)
 - `vendor/200mph/myxa-framework/src/Database/Migrations/README.md`
 - `vendor/200mph/myxa-framework/src/Database/Schema/README.md`

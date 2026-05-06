@@ -40,12 +40,13 @@ final class DocsCatalog
             'database' => 7,
             'database-models' => 8,
             'database-migrations' => 9,
-            'mongo-models' => 10,
-            'cache' => 11,
-            'storage' => 12,
-            'queues' => 13,
-            'events-and-services' => 14,
-            'frontend' => 15,
+            'database-seeding' => 10,
+            'mongo-models' => 11,
+            'cache' => 12,
+            'storage' => 13,
+            'queues' => 14,
+            'events-and-services' => 15,
+            'frontend' => 16,
         ];
 
         $pages = [];
