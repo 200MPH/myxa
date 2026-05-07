@@ -2,11 +2,11 @@ FROM php:8.4-fpm-alpine
 
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
 
-RUN apk add --no-cache bash git nodejs npm unzip \
-    && apk add --no-cache --virtual .build-deps $PHPIZE_DEPS \
+RUN apk add --no-cache bash git nodejs npm unzip libsasl \
+    && apk add --no-cache --virtual .build-deps $PHPIZE_DEPS openssl-dev cyrus-sasl-dev \
     && docker-php-ext-install -j"$(nproc)" mysqli pdo_mysql opcache \
-    && pecl install redis pcov \
-    && docker-php-ext-enable redis pcov \
+    && pecl install mongodb redis pcov \
+    && docker-php-ext-enable mongodb redis pcov \
     && git config --system --add safe.directory /var/www/html \
     && apk del .build-deps
 
