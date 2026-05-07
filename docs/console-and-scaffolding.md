@@ -8,6 +8,27 @@ The preferred project CLI entry point is:
 
 It boots the app console kernel and runs commands inside the container when Docker is available.
 
+## On This Page
+
+- [Basic Usage](#basic-usage)
+- [Maintenance and Versioning](#maintenance-and-versioning)
+- [Cache, Routes, and Storage](#cache-routes-and-storage)
+- [Queues](#queues)
+- [Scaffolding](#scaffolding)
+- [Database and Schema](#database-and-schema)
+- [Auth, Users, and Tokens](#auth-users-and-tokens)
+- [Frontend](#frontend)
+- [Creating New Commands](#creating-new-commands)
+- [Creating Controllers](#creating-controllers)
+- [Creating Middleware](#creating-middleware)
+- [Creating Events and Listeners](#creating-events-and-listeners)
+- [Creating DTO-Style Resources](#creating-dto-style-resources)
+- [Migrations and Models](#migrations-and-models)
+- [Auth Bootstrap](#auth-bootstrap)
+- [Maintenance Mode Notes](#maintenance-mode-notes)
+- [Tips](#tips)
+- [Further Reading](#further-reading)
+
 ## Basic Usage
 
 Show the command list:
@@ -108,6 +129,8 @@ Useful queue command notes:
 - `make:migration`: generate a new migration file.
 - `make:model`: generate a new model from scratch or from an existing source.
 - `make:resource`: generate a DTO-style data/resource class.
+- `make:reverse-seed`: generate a relational seeder from existing SQL table data.
+- `make:seeder`: generate a new application seeder.
 
 ## Database and Schema
 
@@ -117,6 +140,17 @@ Useful queue command notes:
 - `migrate:snapshot`: write a schema snapshot JSON file.
 - `migrate:diff`: compare the live schema against a stored snapshot.
 - `migrate:reverse`: generate a migration from an existing live table.
+- `db:seed`: run the default seeder or a selected seeder.
+
+Reverse seed examples:
+
+```bash
+./myxa make:reverse-seed
+./myxa make:reverse-seed --limit=100
+./myxa make:reverse-seed --tables=users,posts
+./myxa make:reverse-seed --table=users --ignore-relations=logs
+./myxa make:reverse-seed --connection=mysql --password="local password"
+```
 
 ## Auth, Users, and Tokens
 

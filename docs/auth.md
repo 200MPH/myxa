@@ -7,6 +7,19 @@ Myxa ships with a small but practical auth layer built around two guards:
 
 The app skeleton already wires the auth services through `App\Providers\AuthServiceProvider`, so you can use sessions, tokens, auth middleware, and auth-related CLI commands without extra framework setup.
 
+## On This Page
+
+- [What The App Supports](#what-the-app-supports)
+- [First Setup](#first-setup)
+- [Main Config](#main-config)
+- [Protecting Routes](#protecting-routes)
+- [Getting The Current User](#getting-the-current-user)
+- [Session-Based Login Flow](#session-based-login-flow)
+- [Personal Access Tokens](#personal-access-tokens)
+- [Useful CLI Commands](#useful-cli-commands)
+- [Session Storage Choices](#session-storage-choices)
+- [Related Guides](#related-guides)
+
 ## What The App Supports
 
 - user records in the `users` table

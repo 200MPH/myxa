@@ -2,6 +2,14 @@
 
 Myxa is backend-first. The optional frontend setup adds Vue and Vite for hybrid widgets inside server-rendered pages.
 
+## On This Page
+
+- [Install](#install)
+- [Build](#build)
+- [Test Page](#test-page)
+- [Mount Vue](#mount-vue)
+- [Generated Files](#generated-files)
+
 ## Install
 
 Install the Vue frontend scaffold:

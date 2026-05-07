@@ -8,6 +8,16 @@ The app is configured through:
 
 `ApplicationFactory` loads all files under `config/` and resolves environment values through `env(...)`.
 
+## On This Page
+
+- [Config Files](#config-files)
+- [Service Providers](#service-providers)
+- [Main Environment Variables](#main-environment-variables)
+- [Versioning](#versioning)
+- [How to Add New Config](#how-to-add-new-config)
+- [When to Use .env vs Config Files](#when-to-use-env-vs-config-files)
+- [Further Reading](#further-reading)
+
 ## Config Files
 
 Current project config files:
@@ -20,6 +30,7 @@ Current project config files:
 - `config/migrations.php`: migration paths, schema snapshots, repository table names, and model-generation paths.
 - `config/queue.php`: queue driver, named stores, worker behavior, retry defaults, visibility timeout, and Redis queue options.
 - `config/rate_limit.php`: rate-limit stores and reusable presets such as `api`, `login`, and `uploads`.
+- `config/seeders.php`: seeder path, root seeder class, namespace, and default store connections.
 - `config/services.php`: infrastructure-style service connections, mainly Redis by default.
 - `config/storage.php`: default storage disk and named local, public, database-backed, or S3-backed disks.
 - `config/version.php`: version metadata source, sync behavior, and generated version file location.

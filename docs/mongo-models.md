@@ -6,6 +6,13 @@ Use SQL `Model` when you are working with relational tables.
 
 Use `MongoModel` when you want declared-property models backed by Mongo-style collections instead of SQL tables.
 
+## On This Page
+
+- [Basic Model](#basic-model)
+- [Typical Usage](#typical-usage)
+- [Differences From SQL Models](#differences-from-sql-models)
+- [Further Reading](#further-reading)
+
 ## Basic Model
 
 ```php

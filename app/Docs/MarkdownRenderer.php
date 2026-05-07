@@ -14,6 +14,7 @@ final class MarkdownRenderer
         $html = [];
         $count = count($lines);
         $index = 0;
+        $headingIds = [];
 
         while ($index < $count) {
             $line = rtrim($lines[$index]);
@@ -51,7 +52,14 @@ final class MarkdownRenderer
 
             if (preg_match('/^(#{1,6})\s+(.+)$/', $trimmed, $matches) === 1) {
                 $level = strlen($matches[1]);
-                $html[] = sprintf('<h%d>%s</h%d>', $level, $this->renderInline($matches[2]), $level);
+                $id = $this->headingId($matches[2], $headingIds);
+                $html[] = sprintf(
+                    '<h%d id="%s">%s</h%d>',
+                    $level,
+                    Html::escape($id),
+                    $this->renderInline($matches[2]),
+                    $level,
+                );
                 $index++;
 
                 continue;
@@ -133,6 +141,24 @@ final class MarkdownRenderer
         }
 
         return implode("\n", $html);
+    }
+
+    /**
+     * @param array<string, int> $used
+     */
+    private function headingId(string $heading, array &$used): string
+    {
+        $heading = preg_replace('/\[([^\]]+)\]\([^)]+\)/', '$1', $heading) ?? $heading;
+        $heading = str_replace('`', '', $heading);
+        $heading = strtolower($heading);
+        $heading = preg_replace('/[^a-z0-9]+/', '-', $heading) ?? '';
+        $heading = trim($heading, '-');
+        $heading = $heading !== '' ? $heading : 'section';
+
+        $count = $used[$heading] ?? 0;
+        $used[$heading] = $count + 1;
+
+        return $count === 0 ? $heading : sprintf('%s-%d', $heading, $count + 1);
     }
 
     private function renderInline(string $text): string

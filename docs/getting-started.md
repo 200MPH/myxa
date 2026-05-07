@@ -4,6 +4,22 @@ This guide shows the shortest path from a fresh Myxa app to the welcome page.
 
 If you already know Laravel, the project structure should feel very familiar. Service providers, commands, routing, jobs, and most day-to-day patterns are intentionally close, while the main differences are the slimmer model and validator layers.
 
+## On This Page
+
+- [Requirements](#requirements)
+- [Two Ways To Start](#two-ways-to-start)
+- [Install Via Composer](#install-via-composer)
+- [First Boot With Docker](#first-boot-with-docker)
+- [First Boot Without Docker](#first-boot-without-docker)
+- [What You Should See](#what-you-should-see)
+- [First Useful Commands](#first-useful-commands)
+- [Day-to-Day Development](#day-to-day-development)
+- [Useful Local URLs and Ports](#useful-local-urls-and-ports)
+- [Certificates](#certificates)
+- [Optional Setup Steps](#optional-setup-steps)
+- [Troubleshooting](#troubleshooting)
+- [Further Reading](#further-reading)
+
 ## Requirements
 
 You can run the app in either of these ways:
