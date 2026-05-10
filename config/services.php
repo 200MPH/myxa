@@ -15,4 +15,15 @@ return [
             ],
         ],
     ],
+    'mongo' => [
+        'default' => (string) env('MONGO_CONNECTION', 'default'),
+        'connections' => [
+            'default' => [
+                'uri' => (string) env('MONGO_URI', 'mongodb://127.0.0.1:27017'),
+                'database' => (string) env('MONGO_DATABASE', 'myxa'),
+                'uri_options' => [],
+                'driver_options' => [],
+            ],
+        ],
+    ],
 ];

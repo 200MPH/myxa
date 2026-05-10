@@ -16,6 +16,7 @@ use App\Providers\DatabaseServiceProvider;
 use App\Providers\EventServiceProvider;
 use App\Providers\FrameworkServiceProvider;
 use App\Providers\AuthServiceProvider;
+use App\Providers\MongoServiceProvider;
 use App\Providers\QueueServiceProvider;
 use App\Providers\RateLimitServiceProvider;
 use App\Providers\RedisServiceProvider;
@@ -34,6 +35,8 @@ use Myxa\Database\Model\Model;
 use Myxa\Events\EventBusInterface;
 use Myxa\Http\Request;
 use Myxa\Http\Response;
+use Myxa\Mongo\MongoManager;
+use Myxa\Mongo\MongoModel;
 use Myxa\Queue\QueueInterface;
 use Myxa\Queue\WorkerInterface;
 use Myxa\RateLimit\RateLimiter;
@@ -45,6 +48,7 @@ use Myxa\Routing\Router;
 use Myxa\Storage\S3\S3Storage;
 use Myxa\Storage\StorageManager;
 use Myxa\Support\Facades\DB;
+use Myxa\Support\Facades\Mongo;
 use Myxa\Support\Facades\Redis;
 use PHPUnit\Framework\Attributes\CoversClass;
 use ReflectionProperty;
@@ -56,6 +60,7 @@ use Test\TestCase;
 #[CoversClass(EventServiceProvider::class)]
 #[CoversClass(FrameworkServiceProvider::class)]
 #[CoversClass(AuthServiceProvider::class)]
+#[CoversClass(MongoServiceProvider::class)]
 #[CoversClass(QueueServiceProvider::class)]
 #[CoversClass(RateLimitServiceProvider::class)]
 #[CoversClass(RedisServiceProvider::class)]
@@ -321,6 +326,104 @@ final class InfrastructureProvidersTest extends TestCase
         self::assertInstanceOf(RedisManager::class, Redis::getManager());
         self::assertTrue(Redis::getManager()->hasConnection('cache'));
         self::assertSame('cache', $manager->getDefaultConnection());
+    }
+
+    public function testMongoProviderRegistersConfiguredConnections(): void
+    {
+        $app = new Application();
+        $app->instance(ConfigRepository::class, new ConfigRepository([
+            'services' => [
+                'mongo' => [
+                    'default' => 'documents',
+                    'connections' => [
+                        'documents' => [
+                            'uri' => 'mongodb://mongo:27017',
+                            'database' => 'myxa',
+                        ],
+                    ],
+                ],
+            ],
+        ]));
+
+        $app->register(MongoServiceProvider::class);
+        $app->boot();
+
+        $manager = $app->make(MongoManager::class);
+
+        self::assertSame('documents', $manager->getDefaultConnection());
+        self::assertTrue($manager->hasConnection('documents'));
+        self::assertSame($manager, $app->make('mongo'));
+    }
+
+    public function testMongoProviderDirectRegisterAndBootExposeFacadeManager(): void
+    {
+        $app = new Application();
+        $app->instance(ConfigRepository::class, new ConfigRepository([
+            'services' => [
+                'mongo' => [
+                    'connections' => [
+                        'documents' => [
+                            'uri' => 'mongodb://mongo:27017',
+                            'database' => 'myxa',
+                        ],
+                    ],
+                ],
+            ],
+        ]));
+
+        Mongo::clearManager();
+        MongoModel::clearManager();
+        $provider = new MongoServiceProvider();
+        $provider->setApplication($app);
+        $provider->register();
+        $app->boot();
+
+        $manager = $app->make(MongoManager::class);
+
+        self::assertInstanceOf(MongoManager::class, Mongo::getManager());
+        self::assertTrue(Mongo::getManager()->hasConnection('documents'));
+        self::assertSame($manager, Mongo::getManager());
+    }
+
+    public function testMongoProviderSkipsBindingWhenConnectionsConfigIsMissing(): void
+    {
+        $app = new Application();
+        $app->instance(ConfigRepository::class, new ConfigRepository([
+            'services' => [
+                'mongo' => [
+                    'connections' => null,
+                ],
+            ],
+        ]));
+
+        $app->register(MongoServiceProvider::class);
+        $app->boot();
+
+        $this->expectException(NotFoundException::class);
+        $app->make('mongo');
+    }
+
+    public function testMongoProviderSkipsBindingWhenNoValidConnectionsExist(): void
+    {
+        $app = new Application();
+        $app->instance(ConfigRepository::class, new ConfigRepository([
+            'services' => [
+                'mongo' => [
+                    'connections' => [
+                        ['uri' => 'mongodb://mongo:27017', 'database' => 'myxa'],
+                        'missing-uri' => ['database' => 'myxa'],
+                        'missing-database' => ['uri' => 'mongodb://mongo:27017'],
+                        'not-an-array' => 'mongodb://mongo:27017',
+                    ],
+                ],
+            ],
+        ]));
+
+        $app->register(MongoServiceProvider::class);
+        $app->boot();
+
+        $this->expectException(NotFoundException::class);
+        $app->make('mongo');
     }
 
     public function testRoutesProviderLoadsRouteFilesFromRoutesDirectory(): void

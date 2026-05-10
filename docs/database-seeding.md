@@ -224,7 +224,8 @@ $context->mongo('documents')->collection('profiles')->insertOne([
 ]);
 ```
 
-When no alias is passed, the context uses `config/seeders.php` defaults or CLI overrides.
+Mongo aliases come from `config/services.php`. When no alias is passed, the context uses
+`config/seeders.php` defaults or CLI overrides.
 
 `--truncate` is intentionally opt-in per seeder. This keeps destructive behavior local to the seeder that knows which SQL tables, Redis keys, Mongo collections, or external services are safe to reset.
 
