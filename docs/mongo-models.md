@@ -9,6 +9,7 @@ Use `MongoModel` when you want declared-property models backed by Mongo-style co
 ## On This Page
 
 - [Basic Model](#basic-model)
+- [Connection Setup](#connection-setup)
 - [Typical Usage](#typical-usage)
 - [Differences From SQL Models](#differences-from-sql-models)
 - [Further Reading](#further-reading)
@@ -37,11 +38,33 @@ The same strict declared-property idea still applies:
 - guarded, hidden, internal, and cast attributes still apply
 - built-in casts currently include `DateTime`, `DateTimeImmutable`, and `Json`
 
+## Connection Setup
+
+This project wires Mongo through `config/services.php`:
+
+```php
+'mongo' => [
+    'default' => (string) env('MONGO_CONNECTION', 'default'),
+    'connections' => [
+        'default' => [
+            'uri' => (string) env('MONGO_URI', 'mongodb://127.0.0.1:27017'),
+            'database' => (string) env('MONGO_DATABASE', 'myxa'),
+            'uri_options' => [],
+            'driver_options' => [],
+        ],
+    ],
+],
+```
+
+`App\Providers\MongoServiceProvider` registers these connections lazily with the framework
+`MongoServiceProvider`, so the app does not connect to Mongo until code asks for a collection.
+
+The Docker development environment includes a `mongo` service, and the PHP image enables `ext-mongodb`.
+The Composer package `mongodb/mongodb` is required when real Mongo connections are used.
+
 ## Typical Usage
 
 ```php
-UserDocument::setManager($mongoManager);
-
 $user = UserDocument::create([
     'email' => 'john@example.com',
     'status' => 'active',
@@ -58,20 +81,12 @@ $found->save();
 - it does not use the SQL query builder
 - it does not provide SQL-style relations like `hasMany()` or `belongsTo()`
 
-Connection support today:
+Connection support:
 
 - `MongoManager` resolves named Mongo connections
-- each `MongoConnection` resolves named collections
-- the built-in collection implementation currently shipped by the framework is `InMemoryMongoCollection`
-- custom collection backends can be added by implementing `MongoCollectionInterface`
-
-So at the moment, Mongo support is best described as:
-
-- a document-model layer with a connection/collection abstraction
-- built-in in-memory support for tests and local experiments
-- room for custom adapters when you want a real external Mongo backend
-
-This project does not scaffold Mongo connections yet, so treat this as a framework capability you can wire in when your app needs document storage.
+- real Mongo connections resolve collections lazily through `MongoConnection::fromUri()`
+- `MongoDbCollection` adapts the official `mongodb/mongodb` collection API
+- `InMemoryMongoCollection` is still useful for isolated tests and local experiments
 
 ## Further Reading
 
