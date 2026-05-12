@@ -9,6 +9,7 @@ If you already know Laravel, the project structure should feel very familiar. Se
 - [Requirements](#requirements)
 - [Two Ways To Start](#two-ways-to-start)
 - [Install Via Composer](#install-via-composer)
+- [Install Manually From ZIP](#install-manually-from-zip)
 - [First Boot With Docker](#first-boot-with-docker)
 - [First Boot Without Docker](#first-boot-without-docker)
 - [What You Should See](#what-you-should-see)
@@ -62,6 +63,31 @@ Notes:
 - it also expects a host PHP version compatible with the project requirements
 - `composer create-project` already installs dependencies, so you do not need a separate `composer install` step before first boot
 - after creation, you can use the normal `./myxa` workflow in your own project repository
+
+## Install Manually From ZIP
+
+If you cannot use `composer create-project`, [download the current Myxa ZIP archive from GitHub](https://github.com/200MPH/myxa/archive/refs/heads/master.zip):
+
+```text
+https://github.com/200MPH/myxa/archive/refs/heads/master.zip
+```
+
+Then unpack it and enter the extracted directory:
+
+```bash
+unzip master.zip
+mv myxa-master my-app
+cd my-app
+cp .env.example .env
+```
+
+From there, continue with either [First Boot With Docker](#first-boot-with-docker) or [First Boot Without Docker](#first-boot-without-docker).
+
+Notes:
+
+- the ZIP archive does not include Composer dependencies
+- with Docker, run `docker compose exec app composer install` after the containers are started
+- without Docker, run `composer install` on the host before starting the app
 
 ## First Boot With Docker
 
