@@ -160,6 +160,7 @@ JSON);
         self::assertSame(['npm', '--version'], $commands[0]);
         self::assertSame(['docker', '--version'], $commands[1]);
         self::assertSame('docker', $commands[2][0]);
+        self::assertContains('NPM_CONFIG_CACHE=/tmp/npm/cache', $commands[2]);
         self::assertContains('node:22-alpine', $commands[2]);
     }
 

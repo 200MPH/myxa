@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 return [
+    'enabled' => (bool) env('CACHE_ENABLED', true),
     'default' => (string) env('CACHE_STORE', 'local'),
     'stores' => [
         'local' => [

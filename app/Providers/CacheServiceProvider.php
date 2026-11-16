@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Cache\Store\NullCacheStore;
 use App\Config\ConfigRepository;
 use Myxa\Cache\CacheServiceProvider as FrameworkCacheServiceProvider;
 use Myxa\Cache\Store\FileCacheStore;
@@ -18,6 +19,20 @@ final class CacheServiceProvider extends ServiceProvider
         $app = $this->app();
         $config = $this->app()->make(ConfigRepository::class);
         $stores = [];
+
+        if (!(bool) $config->get('cache.enabled', true)) {
+            $defaultStore = (string) $config->get('cache.default', 'local');
+            $nullStore = new NullCacheStore();
+            $stores[$defaultStore] = $nullStore;
+
+            foreach ($config->get('cache.stores', []) as $alias => $storeConfiguration) {
+                $stores[(string) $alias] = $nullStore;
+            }
+
+            $app->register(new FrameworkCacheServiceProvider($stores, $defaultStore));
+
+            return;
+        }
 
         foreach ($config->get('cache.stores', []) as $alias => $storeConfiguration) {
             if (!is_array($storeConfiguration)) {

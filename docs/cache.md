@@ -25,6 +25,7 @@ config/cache.php
 The default cache store is selected by:
 
 ```text
+CACHE_ENABLED=true
 CACHE_STORE=local
 ```
 
@@ -34,6 +35,21 @@ Redis cache settings:
 CACHE_REDIS_CONNECTION=default
 CACHE_REDIS_PREFIX=cache:
 ```
+
+To bypass application caching, set `CACHE_ENABLED=false` and restart any long-running
+application processes. Caching is enabled by default.
+
+When disabled, all configured stores use the application's `NullCacheStore`:
+
+- `get()` returns its default and `has()` returns `false`.
+- `remember()` runs its callback every time without saving the result.
+- Writes and deletions do nothing. `put()`, `forever()`, and `forget()` return `false`;
+  `clear()` returns `true` without deleting anything.
+
+Existing file and Redis entries remain in storage, subject to their normal expiry.
+Set `CACHE_ENABLED=true` to resume using those entries. This applies to the cache
+manager, facade, and named stores, including cache commands. Route caching remains
+controlled separately by `ROUTE_CACHE`.
 
 ## Stores
 
