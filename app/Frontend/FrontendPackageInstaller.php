@@ -53,6 +53,8 @@ class FrontendPackageInstaller
                 '--rm',
                 '--user',
                 $this->currentUser(),
+                '-e',
+                'NPM_CONFIG_CACHE=/tmp/npm/cache',
                 '-v',
                 $cwd . ':/app',
                 '-w',

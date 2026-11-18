@@ -14,6 +14,7 @@ Use storage for files: uploads, generated reports, browser-downloadable assets, 
 - [Uploads](#uploads)
 - [S3-Compatible Storage](#s3-compatible-storage)
 - [Database Storage](#database-storage)
+- [Metadata Tracking Storage](#metadata-tracking-storage)
 - [Notes](#notes)
 - [Related Guides](#related-guides)
 
@@ -37,6 +38,8 @@ Current disks:
 - `public`: browser-accessible filesystem storage under `storage/app/public`
 - `db`: database-backed storage
 - `s3`: S3-compatible object storage
+
+The framework also supports a metadata-tracking wrapper for apps that want file contents on `local`, `public`, or `s3`, while storing searchable file metadata in the application database.
 
 ## Basic Usage
 
@@ -254,6 +257,60 @@ That is useful when:
 - you need DB-controlled storage metadata
 
 It is usually not the first choice for large public assets.
+
+## Metadata Tracking Storage
+
+For larger files, you may want the bytes on the filesystem or S3, but still keep file metadata in your application database. The framework supports that pattern with `Myxa\Storage\Metadata\MetadataTrackingStorage`.
+
+This is different from the `db` disk:
+
+- `db` stores file metadata and contents in the database
+- metadata tracking stores file contents in another disk, such as local storage or S3, and stores only metadata in your database
+
+The app provides its own metadata repository so it can choose the table shape:
+
+```php
+use Myxa\Storage\Metadata\MetadataTrackingStorage;
+use Myxa\Storage\Metadata\StorageMetadataRepositoryInterface;
+use Myxa\Storage\S3\S3Storage;
+use Myxa\Storage\StoredFile;
+
+final class AppFileMetadataRepository implements StorageMetadataRepositoryInterface
+{
+    public function save(StoredFile $file): void
+    {
+        // Store storage, location, name, size, checksum, MIME type, and metadata.
+    }
+
+    public function find(string $storage, string $location): ?StoredFile
+    {
+        // Return a StoredFile built from your metadata row.
+    }
+
+    public function delete(string $storage, string $location): bool
+    {
+        // Delete the metadata row.
+    }
+}
+
+$uploads = new MetadataTrackingStorage(
+    new S3Storage(
+        bucket: 'my-app-files',
+        region: 'eu-central-1',
+        accessKey: $_ENV['AWS_ACCESS_KEY_ID'],
+        secretKey: $_ENV['AWS_SECRET_ACCESS_KEY'],
+    ),
+    new AppFileMetadataRepository(),
+    'uploads',
+);
+```
+
+With this setup:
+
+- writes go to the wrapped storage driver and then sync metadata to the repository
+- reads still come from the wrapped storage driver
+- `get()` can return metadata from your repository
+- stale metadata is removed when the physical file no longer exists
 
 ## Notes
 

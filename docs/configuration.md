@@ -91,6 +91,7 @@ Variable notes:
 ### Cache
 
 ```text
+CACHE_ENABLED=true
 CACHE_STORE=local
 CACHE_REDIS_CONNECTION=default
 CACHE_REDIS_PREFIX=cache:
@@ -99,6 +100,7 @@ ROUTE_CACHE=false
 
 Variable notes:
 
+- `CACHE_ENABLED`: enables application caching (default `true`). Set `false` to bypass all stores without deleting existing keys; their normal expiry still applies.
 - `CACHE_STORE`: default application cache store, usually `local` or `redis`.
 - `CACHE_REDIS_CONNECTION`: Redis connection name to use when `CACHE_STORE=redis`.
 - `CACHE_REDIS_PREFIX`: key prefix used for Redis-backed cache entries.
@@ -248,6 +250,8 @@ Variable notes:
 - `public`: `storage/app/public`
 - `db`: database-backed storage
 - `s3`: S3-compatible object storage
+
+The framework also supports metadata-tracking storage for apps that want file contents on local/public/S3 storage while keeping only searchable metadata in the database. See [Storage](storage.md#metadata-tracking-storage).
 
 Choose disks by use case:
 
