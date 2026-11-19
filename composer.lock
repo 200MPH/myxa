@@ -4,20 +4,20 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "7f548037c7b6225c7ccaeae7b4c30c8b",
+    "content-hash": "772dafd88892f21d9e1b438646b57906",
     "packages": [
         {
             "name": "200mph/myxa-framework",
-            "version": "dev-develop",
+            "version": "1.1.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/200MPH/myxa-framework.git",
-                "reference": "4d26978baac3a785df501cf4c63f50ec5cfe0c23"
+                "reference": "b5cbba913a913760d76e6fe52c428564276f407d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/200MPH/myxa-framework/zipball/4d26978baac3a785df501cf4c63f50ec5cfe0c23",
-                "reference": "4d26978baac3a785df501cf4c63f50ec5cfe0c23",
+                "url": "https://api.github.com/repos/200MPH/myxa-framework/zipball/b5cbba913a913760d76e6fe52c428564276f407d",
+                "reference": "b5cbba913a913760d76e6fe52c428564276f407d",
                 "shasum": ""
             },
             "require": {
@@ -59,10 +59,10 @@
             "description": "The core framework package for Myxa, a lightweight and flexible AI-powered PHP framework.",
             "support": {
                 "issues": "https://github.com/200MPH/myxa-framework/issues",
-                "source": "https://github.com/200MPH/myxa-framework/tree/develop"
+                "source": "https://github.com/200MPH/myxa-framework/tree/1.1.1"
             },
-            "time": "2026-11-19T20:56:55+00:00",
-            "published-time": "2026-11-19T20:57:10+00:00"
+            "time": "2026-11-19T21:12:34+00:00",
+            "published-time": "2026-11-19T21:18:10+00:00"
         },
         {
             "name": "psr/container",
@@ -2341,9 +2341,7 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {
-        "200mph/myxa-framework": 20
-    },
+    "stability-flags": {},
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
