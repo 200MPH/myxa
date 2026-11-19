@@ -126,6 +126,31 @@ PHP);
         self::assertStringContainsString("2 => 'api',", $compiled);
     }
 
+    public function testCachePreservesNamedGroupsAndTheirNestedRoutes(): void
+    {
+        $router = new Router(new Application());
+        Route::setRouter($router);
+        Route::group('/admin', static function (): void {
+            Route::get('/dashboard', ['AdminController', 'index']);
+            Route::group('/users', static function (): void {
+                Route::get('/{id}', ['UserController', 'show'])->middleware('audit');
+            }, name: "users'group");
+        }, ['auth'], name: 'admin');
+        Route::get('/public', ['PublicController', 'index']);
+
+        file_put_contents($this->cachePath, RouteCache::compile($router->routes()));
+        Route::setRouter(new Router(new Application()));
+        $config = new ConfigRepository(['cache' => ['routes' => ['path' => $this->cachePath]]]);
+
+        self::assertTrue(RouteCache::loadCachedRoutes($config));
+        self::assertCount(2, Route::routes('admin'));
+        self::assertCount(1, Route::routes("users'group"));
+        self::assertCount(3, Route::routes());
+        self::assertSame(['admin', "users'group"], Route::find('GET', '/admin/users/42')->groupNames());
+        self::assertSame(['auth', 'audit'], Route::find('GET', '/admin/users/42')->middlewares());
+        self::assertSame([], Route::find('GET', '/public')->groupNames());
+    }
+
     public function testCompileRejectsClosureMiddleware(): void
     {
         $router = new Router(new Application());

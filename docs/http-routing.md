@@ -174,6 +174,26 @@ Route::group('/admin', static function (): void {
 
 For guard setup, see [Auth](auth.md). For throttle presets and stores, see [Rate Limiting and Throttling](rate-limiting.md).
 
+Give a group a name to retrieve its routes elsewhere:
+
+```php
+Route::group('/admin', static function (): void {
+    Route::get('/dashboard', [AdminDashboardController::class, 'show']);
+    Route::get('/users', [AdminUserController::class, 'index']);
+}, name: 'admin');
+
+$adminRoutes = Route::routes('admin'); // list<RouteDefinition>
+$allRoutes = Route::routes();
+```
+
+The optional fourth parameter is `string $name = ''`; existing calls remain valid.
+The name is a group identifier, independent of the URL prefix. Queries include
+routes in nested groups and return an empty array for an unknown name. Groups
+sharing a name are returned together. Route caching preserves group membership.
+
+Use `$route->groupName()` for the nearest named group (`''` outside named groups),
+or `$route->groupNames()` for all containing named groups, outermost first.
+
 ## Controllers
 
 Generate controllers with:
