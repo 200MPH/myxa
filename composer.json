@@ -21,7 +21,7 @@
   },
   "require": {
     "php": ">=8.4",
-    "200mph/myxa-framework": "dev-develop"
+    "200mph/myxa-framework": "^1.1.1"
   },
   "require-dev": {
     "phpunit/phpunit": "^11.5",
