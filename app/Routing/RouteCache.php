@@ -125,11 +125,22 @@ final class RouteCache
             $path = var_export($route->path(), true);
             $handler = self::exportValue($route->handler(), $route, 'handler');
 
-            $lines[] = sprintf('$route = Route::match(%s, %s, %s);', $methods, $path, $handler);
+            $indent = '';
+            foreach ($route->groupNames() as $groupName) {
+                $lines[] = $indent . "Route::group('', static function (): void {";
+                $indent .= '    ';
+            }
+
+            $lines[] = sprintf('%s$route = Route::match(%s, %s, %s);', $indent, $methods, $path, $handler);
 
             if ($route->middlewares() !== []) {
                 $middlewares = self::exportValue($route->middlewares(), $route, 'middlewares');
-                $lines[] = sprintf('$route->middleware(...%s);', $middlewares);
+                $lines[] = sprintf('%s$route->middleware(...%s);', $indent, $middlewares);
+            }
+
+            foreach (array_reverse($route->groupNames()) as $groupName) {
+                $indent = substr($indent, 0, -4);
+                $lines[] = sprintf('%s}, name: %s);', $indent, var_export($groupName, true));
             }
 
             $lines[] = '';

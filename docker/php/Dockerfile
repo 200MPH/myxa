@@ -5,7 +5,7 @@ COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
 RUN apk add --no-cache bash git nodejs npm unzip libsasl \
     && apk add --no-cache --virtual .build-deps $PHPIZE_DEPS openssl-dev cyrus-sasl-dev \
     && docker-php-ext-install -j"$(nproc)" mysqli pdo_mysql opcache \
-    && pecl install mongodb redis pcov \
+    && pecl install mongodb-2.5.8 redis pcov \
     && docker-php-ext-enable mongodb redis pcov \
     && git config --system --add safe.directory /var/www/html \
     && apk del .build-deps
