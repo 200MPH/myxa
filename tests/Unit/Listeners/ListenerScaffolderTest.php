@@ -11,6 +11,7 @@ use Test\TestCase;
 #[CoversClass(ListenerScaffolder::class)]
 final class ListenerScaffolderTest extends TestCase
 {
+    private string $rootPath;
     private string $listenersPath;
     private string $providerPath;
 
@@ -18,9 +19,9 @@ final class ListenerScaffolderTest extends TestCase
     {
         parent::setUp();
 
-        $rootPath = sys_get_temp_dir() . '/myxa-listener-scaffolder-' . uniqid('', true);
-        $this->listenersPath = $rootPath . '/app/Listeners';
-        $this->providerPath = $rootPath . '/app/Providers/EventServiceProvider.php';
+        $this->rootPath = sys_get_temp_dir() . '/myxa-listener-scaffolder-' . uniqid('', true);
+        $this->listenersPath = $this->rootPath . '/app/Listeners';
+        $this->providerPath = $this->rootPath . '/app/Providers/EventServiceProvider.php';
 
         mkdir($this->listenersPath, 0777, true);
         mkdir(dirname($this->providerPath), 0777, true);
@@ -56,7 +57,7 @@ PHP);
 
     protected function tearDown(): void
     {
-        $this->removeDirectory(dirname(dirname(dirname($this->listenersPath))));
+        $this->removeDirectory($this->rootPath);
 
         parent::tearDown();
     }

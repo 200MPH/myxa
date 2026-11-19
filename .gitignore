@@ -10,5 +10,6 @@ storage/sessions/*
 storage/cache/framework/*
 storage/rate-limit/*
 .phpunit.result.cache
+/.phpunit.cache/
 public/assets/frontend/*
 !public/assets/frontend/.gitignore

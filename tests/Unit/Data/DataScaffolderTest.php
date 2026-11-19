@@ -11,21 +11,22 @@ use Test\TestCase;
 #[CoversClass(DataScaffolder::class)]
 final class DataScaffolderTest extends TestCase
 {
+    private string $rootPath;
     private string $dataPath;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $rootPath = sys_get_temp_dir() . '/myxa-data-scaffolder-' . uniqid('', true);
-        $this->dataPath = $rootPath . '/app/Data';
+        $this->rootPath = sys_get_temp_dir() . '/myxa-data-scaffolder-' . uniqid('', true);
+        $this->dataPath = $this->rootPath . '/app/Data';
 
         mkdir($this->dataPath, 0777, true);
     }
 
     protected function tearDown(): void
     {
-        $this->removeDirectory(dirname(dirname(dirname($this->dataPath))));
+        $this->removeDirectory($this->rootPath);
 
         parent::tearDown();
     }

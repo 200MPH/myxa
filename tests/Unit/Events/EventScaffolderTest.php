@@ -11,21 +11,22 @@ use Test\TestCase;
 #[CoversClass(EventScaffolder::class)]
 final class EventScaffolderTest extends TestCase
 {
+    private string $rootPath;
     private string $eventsPath;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $rootPath = sys_get_temp_dir() . '/myxa-event-scaffolder-' . uniqid('', true);
-        $this->eventsPath = $rootPath . '/app/Events';
+        $this->rootPath = sys_get_temp_dir() . '/myxa-event-scaffolder-' . uniqid('', true);
+        $this->eventsPath = $this->rootPath . '/app/Events';
 
         mkdir($this->eventsPath, 0777, true);
     }
 
     protected function tearDown(): void
     {
-        $this->removeDirectory(dirname(dirname(dirname($this->eventsPath))));
+        $this->removeDirectory($this->rootPath);
 
         parent::tearDown();
     }
